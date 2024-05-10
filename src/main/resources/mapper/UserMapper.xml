@@ -18,8 +18,8 @@
     </select>
 
     <insert id="registUser" parameterType="user">
-        INSERT INTO member (id, username, password, nickname, email, profile_image, authority)
-        VALUES (#{id}, #{username}, #{password}, #{nickname}, #{email}, #{profileImage}, #{authority})
+        INSERT INTO member (id, username, password, nickname, email, profile_image, authority, point)
+        VALUES (#{id}, #{username}, #{password}, #{nickname}, #{email}, #{profileImage}, #{authority}, #{point})
     </insert>
 
     <insert id="saveIngredient" parameterType="ingredient">
@@ -31,6 +31,12 @@
         UPDATE member
         SET nickname = #{nickname},
             email = #{email}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updatePoint" parameterType="user">
+        UPDATE member
+        SET point = #{point}
         WHERE id = #{id}
     </update>
 

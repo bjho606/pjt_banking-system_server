@@ -10,6 +10,8 @@ public interface UserMapper {
 
     User findById(int id);
 
+    User findByUsername(String username);
+
     Ingredient findIngredientById(String id);
 
     void registUser(User user);
@@ -17,6 +19,8 @@ public interface UserMapper {
     void saveIngredient(Ingredient ingredient);
 
     void updateUser(User user);
+
+    void updatePoint(User user);
 
     void updateProfileImage(UserProfileImageUpdateDto dto);
 

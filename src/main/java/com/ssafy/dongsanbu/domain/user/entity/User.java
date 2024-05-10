@@ -15,6 +15,7 @@ public class User implements Serializable {
     private String nickname;
     private String email;
     private String profileImage;
+    private int point;
     private String authority;
 
     @Builder
@@ -24,6 +25,7 @@ public class User implements Serializable {
                  String nickname,
                  String email,
                  String profileImage,
+                 int point,
                  String authority) {
         this.id = id;
         this.username = username;
@@ -31,6 +33,38 @@ public class User implements Serializable {
         this.nickname = nickname;
         this.email = email;
         this.profileImage = profileImage;
+        this.point = point;
         this.authority = authority;
+    }
+
+    public void addPoint(int pointAmount) {
+        if(pointAmount < 0) {
+            throw new IllegalArgumentException("Point amount must be positive");
+        }
+        this.point += pointAmount;
+    }
+
+    public void usePoint(int pointAmount) {
+        if(pointAmount <= 0) {
+            throw new IllegalArgumentException("Point amount must be positive");
+        }
+        if(this.point < pointAmount) {
+            throw new IllegalArgumentException("Not enough point");
+        }
+        this.point -= pointAmount;
+    }
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "id=" + id +
+                ", username='" + username + '\'' +
+                ", password='" + password + '\'' +
+                ", nickname='" + nickname + '\'' +
+                ", email='" + email + '\'' +
+                ", profileImage='" + profileImage + '\'' +
+                ", point=" + point +
+                ", authority='" + authority + '\'' +
+                '}';
     }
 }

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.dongsanbu.domain.point.mapper.PointMapper">
+
+    <select id="insertPoint" parameterType="com.ssafy.dongsanbu.domain.point.dto.PointInsertDto">
+        INSERT INTO point_record (member_id, point) VALUES (#{memberId}, #{point})
+    </select>
+
+</mapper>
