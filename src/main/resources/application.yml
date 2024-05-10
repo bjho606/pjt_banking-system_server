@@ -1,0 +1,17 @@
+spring:
+  config:
+    import: classpath:privacy.yml
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${db.host}:${db.port}/${db.database}?useSSL=false&useUnicode=true&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
+    username: ${db.username}
+    password: ${db.password}
+
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.ssafy.dongsanbu.domain.*.entity
+  configuration:
+    map-underscore-to-camel-case: true
+
+image:
+  upload-locations: ${image.upload-locations}
