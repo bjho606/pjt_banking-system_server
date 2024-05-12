@@ -49,7 +49,7 @@
 ## 구현 기능
 ### 트랜잭션 처리
 #### ERD
-![스크린샷 2024-05-13 오전 12.04.15.png](..%2F..%2F..%2F..%2F..%2F..%2F..%2FDownloads%2F%EC%8A%A4%ED%81%AC%EB%A6%B0%EC%83%B7%202024-05-13%20%EC%98%A4%EC%A0%84%2012.04.15.png)
+![erd](img/transaction_erd.png)
 - Member 테이블 : 멤버 정보 + 멤버가 보유하고 있는 총 포인트(point) 정보
   - 동시성 문제가 발생하는 주요 원인
 - Point_Record 테이블 : member_id를 FK로 가지고 있는 포인트 사용 내역
@@ -174,7 +174,7 @@
     }
     ```
 - Test Result
-![스크린샷 2024-05-13 오전 12.50.05.png](..%2F..%2F..%2F..%2F..%2F..%2F..%2FDownloads%2F%EC%8A%A4%ED%81%AC%EB%A6%B0%EC%83%B7%202024-05-13%20%EC%98%A4%EC%A0%84%2012.50.05.png)
+![deadlock result](img/deadlock_result.png)
   - 데드락 발생
   
 #### Why?
@@ -188,7 +188,7 @@
   2. Point_Record 테이블에 새로운 행(포인트 변동 정보) 추가 -> `S Lock 획득`
   3. Member 테이블에 point 갱신 -> `X Lock` 대기 <br>
   => 다른 트랜잭션에서 설정한 S Lock 때문에 데드락 발생
-  ![deadlock1.png](..%2F..%2F..%2F..%2F..%2F..%2F..%2FDownloads%2Fdeadlock1.png)
+  ![deadlock](img/deadlock.png)
 
 #### 2. 동시성 문제를 어떻게 해결하지? Part 1
 > 낙관적 락 (Optimistic Lock)
@@ -207,7 +207,7 @@
   </update> 
   ```
 - 여러 트랜잭션에서 member의 데이터를 읽어왔을 때, version이 맞지 않으면 rollback 된다. 
-  ![optimistic.png](..%2F..%2F..%2F..%2F..%2F..%2F..%2FDownloads%2Foptimistic.png)
+  ![optimistic](img/optimistic.png)
 - 이렇게 rollback 된 데이터는 예외처리를 통해 재시도하는 로직을 구현해야 완전한 동시성 해결이 가능하다.
   - 재시도 방법 : retry 하는 AOP 구현
   - OptimisticLockRetryAspect.java
@@ -238,7 +238,7 @@
       }
     }
     ```
-- Test Result![스크린샷 2024-05-13 오전 1.21.11.png](..%2F..%2F..%2F..%2F..%2F..%2F..%2FDownloads%2F%EC%8A%A4%ED%81%AC%EB%A6%B0%EC%83%B7%202024-05-13%20%EC%98%A4%EC%A0%84%201.21.11.png)
+- Test Result![v2](img/optimistic_result.png)
 
 #### 3. 동시성 문제를 어떻게 해결하지? Part 2
 > 비관적 락 (Pessimistic Lock)
@@ -255,7 +255,7 @@
   ```
 - select for update 문으로 해당 row에 배타락이 걸리기 때문에, 다른 트랜잭션들은 이 락이 풀릴 때까지 대기해야 한다.
 - Test Result
-![스크린샷 2024-05-13 오전 1.29.38.png](..%2F..%2F..%2F..%2F..%2F..%2F..%2FDownloads%2F%EC%8A%A4%ED%81%AC%EB%A6%B0%EC%83%B7%202024-05-13%20%EC%98%A4%EC%A0%84%201.29.38.png)
+![pessimistic](img/pessimistic_result.png)
 
 #### 낙관적 락 vs 비관적 락
 - 낙관적 락
