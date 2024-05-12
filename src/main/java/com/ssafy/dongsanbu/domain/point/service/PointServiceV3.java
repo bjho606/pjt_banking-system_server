@@ -26,13 +26,16 @@ public class PointServiceV3 {
         user.addPoint(pointAmount);
     }
 
+    @Transactional
     public void usePoint(int userId, int pointAmount) {
-        pointMapper.insertPoint(new PointInsertDto(userId, pointAmount));
-        User user = userMapper.findById(userId);
+        User user = userMapper.findByIdForUpdate(userId);
         if(user == null) {
             throw new RuntimeException("User not found");
         }
 
         user.usePoint(pointAmount);
+        userMapper.updatePoint(user);
+
+        pointMapper.insertPoint(new PointInsertDto(userId, pointAmount));
     }
 }

@@ -5,10 +5,14 @@ import com.ssafy.dongsanbu.domain.user.entity.Ingredient;
 import com.ssafy.dongsanbu.domain.user.entity.User;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.util.Map;
+
 @Mapper
 public interface UserMapper {
 
     User findById(int id);
+    User findByIdWithVersion(int id);
+    User findByIdForUpdate(int id);
 
     User findByUsername(String username);
 
@@ -21,6 +25,7 @@ public interface UserMapper {
     void updateUser(User user);
 
     void updatePoint(User user);
+    int updatePointWithVersion(Map<String, Object> map);
 
     void updateProfileImage(UserProfileImageUpdateDto dto);
 

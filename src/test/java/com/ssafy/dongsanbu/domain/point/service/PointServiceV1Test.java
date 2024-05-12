@@ -14,6 +14,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.DisplayNameGeneration;
@@ -147,9 +149,9 @@ class PointServiceV1Test {
         System.out.println(resultUser);
         int pointRecordCount = DBUtils.countAll("point_record", database, username, password);
 
-        assertAll(() -> {
-            assertThat(resultUser.getPoint()).isZero();
-            assertThat(pointRecordCount).isEqualTo(point / usePoint + 1);
-        });
+        SoftAssertions softly = new SoftAssertions();
+        softly.assertThat(resultUser.getPoint()).isZero();
+        softly.assertThat(pointRecordCount).isEqualTo(point / usePoint + 1);
+        softly.assertAll();
     }
 }

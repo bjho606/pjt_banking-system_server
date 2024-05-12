@@ -17,6 +17,7 @@ public class User implements Serializable {
     private String profileImage;
     private int point;
     private String authority;
+    private int version;
 
     @Builder
     private User(int id,
@@ -26,7 +27,8 @@ public class User implements Serializable {
                  String email,
                  String profileImage,
                  int point,
-                 String authority) {
+                 String authority,
+                 int version) {
         this.id = id;
         this.username = username;
         this.password = password;
@@ -35,6 +37,7 @@ public class User implements Serializable {
         this.profileImage = profileImage;
         this.point = point;
         this.authority = authority;
+        this.version = version;
     }
 
     public void addPoint(int pointAmount) {
@@ -65,6 +68,7 @@ public class User implements Serializable {
                 ", profileImage='" + profileImage + '\'' +
                 ", point=" + point +
                 ", authority='" + authority + '\'' +
+                ", version='" + version + '\'' +
                 '}';
     }
 }
