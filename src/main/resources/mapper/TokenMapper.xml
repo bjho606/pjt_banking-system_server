@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ssafy.dongsanbu.domain.token.mapper.LogoutTokenMapper">
+
+    <select id="exists" parameterType="com.ssafy.dongsanbu.domain.token.dto.Token"
+            resultType="boolean">
+        SELECT *
+        FROM member
+        WHERE username = #{username}
+          and password = #{password}
+    </select>
+
+    <insert id="save" parameterType="com.ssafy.dongsanbu.domain.auth.dto.LoginRequest">
+        SELECT *
+        FROM member
+        WHERE username = #{username}
+          and password = #{password}
+    </insert>
+
+    <delete id="delete" parameterType="com.ssafy.dongsanbu.domain.token.dto.Token">
+        SELECT *
+        FROM member
+        WHERE username = #{username}
+          and password = #{password}
+    </delete>
+
+</mapper>

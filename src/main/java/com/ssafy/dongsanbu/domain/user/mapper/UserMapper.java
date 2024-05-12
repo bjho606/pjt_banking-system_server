@@ -10,6 +10,8 @@ public interface UserMapper {
 
     User findById(int id);
 
+    User findByIdForUpdate(int id);
+
     User findByUsername(String username);
 
     Ingredient findIngredientById(String id);

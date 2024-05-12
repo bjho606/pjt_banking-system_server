@@ -60,7 +60,7 @@ class PointServiceV1Test {
     }
 
     @Test
-    void 순차적_실행_테스트() throws InterruptedException {
+    void 순차적_실행_테스트() {
         // given
         int point = 10000;
         User user = User.builder()

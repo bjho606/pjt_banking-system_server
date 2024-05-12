@@ -1,8 +1,5 @@
 package com.ssafy.dongsanbu.domain.point.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
-
 import com.ssafy.dongsanbu.domain.auth.dto.LoginDto;
 import com.ssafy.dongsanbu.domain.auth.mapper.AuthMapper;
 import com.ssafy.dongsanbu.domain.point.dto.PointInsertDto;
@@ -14,6 +11,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.DisplayNameGeneration;
@@ -30,17 +28,17 @@ import org.springframework.boot.test.context.SpringBootTest;
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @DisplayName("비관적 락을 사용한 포인트 사용 시 동시성 이슈 발생 테스트")
 class PointServiceV3Test {
-    private final PointServiceV1 pointServiceV1;
+    private final PointServiceV3 pointService;
     private final UserMapper userMapper;
     private final AuthMapper authMapper;
     private final PointMapper pointMapper;
 
     @Autowired
-    public PointServiceV3Test(PointServiceV1 pointServiceV1,
+    public PointServiceV3Test(PointServiceV3 pointService,
                               UserMapper userMapper,
                               AuthMapper authMapper,
                               PointMapper pointMapper) {
-        this.pointServiceV1 = pointServiceV1;
+        this.pointService = pointService;
         this.userMapper = userMapper;
         this.authMapper = authMapper;
         this.pointMapper = pointMapper;
@@ -87,7 +85,7 @@ class PointServiceV3Test {
         for (int i = 0; i < cnt; ++i) {
             executorService.submit(() -> {
                 try {
-                    pointServiceV1.usePoint(savedUser.getId(), usePoint);
+                    pointService.usePoint(savedUser.getId(), usePoint);
                     successCount.incrementAndGet();
                 } catch (Exception e) {
                     System.out.println(e.getMessage());
@@ -106,9 +104,9 @@ class PointServiceV3Test {
         System.out.println(resultUser);
         int pointRecordCount = DBUtils.countAll("point_record", database, username, password);
 
-        assertAll(() -> {
-            assertThat(resultUser.getPoint()).isZero();
-            assertThat(pointRecordCount).isEqualTo(point / usePoint + 1);
-        });
+        SoftAssertions softly = new SoftAssertions();
+        softly.assertThat(resultUser.getPoint()).isZero();
+        softly.assertThat(pointRecordCount).isEqualTo(point / usePoint + 1);
+        softly.assertAll();
     }
 }

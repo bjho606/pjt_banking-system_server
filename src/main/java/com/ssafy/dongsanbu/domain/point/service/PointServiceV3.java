@@ -17,22 +17,27 @@ public class PointServiceV3 {
 
     @Transactional
     public void addPoint(int userId, int pointAmount) {
-        pointMapper.insertPoint(new PointInsertDto(userId, pointAmount));
         User user = userMapper.findById(userId);
         if(user == null) {
             throw new RuntimeException("User not found");
         }
+
+        pointMapper.insertPoint(new PointInsertDto(userId, pointAmount));
 
         user.addPoint(pointAmount);
+        userMapper.updatePoint(user);
     }
 
+    @Transactional
     public void usePoint(int userId, int pointAmount) {
-        pointMapper.insertPoint(new PointInsertDto(userId, pointAmount));
-        User user = userMapper.findById(userId);
+        User user = userMapper.findByIdForUpdate(userId);
         if(user == null) {
             throw new RuntimeException("User not found");
         }
 
+        pointMapper.insertPoint(new PointInsertDto(userId, pointAmount));
+
         user.usePoint(pointAmount);
+        userMapper.updatePoint(user);
     }
 }

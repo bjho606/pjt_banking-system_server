@@ -11,6 +11,14 @@
         WHERE id = #{id}
     </select>
 
+    <select id="findByIdForUpdate" parameterType="int" resultType="user">
+        SELECT *
+        FROM member
+        WHERE id = #{id}
+            for
+        update
+    </select>
+
     <select id="findIngredientById" parameterType="String" resultType="Ingredient">
         SELECT *
         FROM ingredient
