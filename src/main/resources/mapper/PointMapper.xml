@@ -9,4 +9,8 @@
         INSERT INTO point_record (member_id, point) VALUES (#{memberId}, #{point})
     </select>
 
+    <select id="insertPointWithVersion" parameterType="com.ssafy.dongsanbu.domain.point.dto.PointInsertDto">
+        INSERT INTO point_record2 (member_id, point) VALUES (#{memberId}, #{point})
+    </select>
+
 </mapper>

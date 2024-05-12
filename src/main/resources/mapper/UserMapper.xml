@@ -15,8 +15,7 @@
         SELECT *
         FROM member
         WHERE id = #{id}
-            for
-        update
+        For Update
     </select>
 
     <select id="findIngredientById" parameterType="String" resultType="Ingredient">
@@ -26,8 +25,8 @@
     </select>
 
     <insert id="registUser" parameterType="user">
-        INSERT INTO member (id, username, password, nickname, email, profile_image, authority, point)
-        VALUES (#{id}, #{username}, #{password}, #{nickname}, #{email}, #{profileImage}, #{authority}, #{point})
+        INSERT INTO member (id, username, password, nickname, email, profile_image, authority, point, version)
+        VALUES (#{id}, #{username}, #{password}, #{nickname}, #{email}, #{profileImage}, #{authority}, #{point}, #{version})
     </insert>
 
     <insert id="saveIngredient" parameterType="ingredient">
@@ -46,6 +45,14 @@
         UPDATE member
         SET point = #{point}
         WHERE id = #{id}
+    </update>
+
+    <update id="updatePointWithVersion" parameterType="Map">
+        UPDATE member
+        SET point = #{point},
+            version = #{originalVersion}+1
+        WHERE id = #{id}
+        AND version = #{originalVersion}
     </update>
 
     <update id="updateProfileImage" parameterType="com.ssafy.dongsanbu.domain.user.dto.UserProfileImageUpdateDto">

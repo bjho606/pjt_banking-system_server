@@ -14,6 +14,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.DisplayNameGeneration;
@@ -30,17 +32,17 @@ import org.springframework.boot.test.context.SpringBootTest;
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @DisplayName("낙관적 락을 사용한 포인트 사용 시 동시성 이슈 발생 테스트")
 class PointServiceV2Test {
-    private final PointServiceV1 pointServiceV1;
+    private final PointServiceV2 pointServiceV2;
     private final UserMapper userMapper;
     private final AuthMapper authMapper;
     private final PointMapper pointMapper;
 
     @Autowired
-    public PointServiceV2Test(PointServiceV1 pointServiceV1,
+    public PointServiceV2Test(PointServiceV2 pointServiceV2,
                               UserMapper userMapper,
                               AuthMapper authMapper,
                               PointMapper pointMapper) {
-        this.pointServiceV1 = pointServiceV1;
+        this.pointServiceV2 = pointServiceV2;
         this.userMapper = userMapper;
         this.authMapper = authMapper;
         this.pointMapper = pointMapper;
@@ -55,14 +57,15 @@ class PointServiceV2Test {
 
     @BeforeEach
     void setUp() {
-        DBUtils.truncate("point_record", database, username, password);
+        DBUtils.truncate("point_record2", database, username, password);
         DBUtils.truncate("member", database, username, password);
     }
 
     @Test
-    void 낙관적_락을_사용하여_동시성_이슈를_해결한다() throws InterruptedException {
+    void 순차적_실행_테스트() throws InterruptedException {
         // given
         int point = 10000;
+        int version = 1;
         User user = User.builder()
                 .username("test")
                 .password("test")
@@ -70,12 +73,56 @@ class PointServiceV2Test {
                 .email("test@test.com")
                 .authority("USER")
                 .point(point)
+                .version(version)
                 .build();
         userMapper.registUser(user);
         User savedUser = authMapper.findByUsernameAndPassword(new LoginDto("test", "test"));
 
         PointInsertDto pointInsertDto = new PointInsertDto(savedUser.getId(), point);
-        pointMapper.insertPoint(pointInsertDto);
+        pointMapper.insertPointWithVersion(pointInsertDto);
+        // when
+        int cnt = 200;
+        int usePoint = 100;
+
+        for (int i = 0; i < cnt; ++i) {
+            try {
+                pointServiceV2.usePoint(savedUser.getId(), usePoint);
+            } catch (Exception e) {
+                System.out.println(i + ": " + e.getMessage());
+            }
+        }
+
+        //then
+        User resultUser = userMapper.findById(savedUser.getId());
+        System.out.println(resultUser);
+        int pointRecordCount = DBUtils.countAll("point_record2", database, username, password);
+
+        SoftAssertions softly = new SoftAssertions();
+        softly.assertThat(resultUser.getPoint()).isZero();
+        softly.assertThat(pointRecordCount).isEqualTo(point / usePoint + 1);
+        softly.assertAll();
+    }
+
+
+    @Test
+    void 낙관적_락을_사용하여_동시성_이슈를_해결한다() throws InterruptedException {
+        // given
+        int point = 10000;
+        int version = 1;
+        User user = User.builder()
+                .username("test")
+                .password("test")
+                .nickname("test")
+                .email("test@test.com")
+                .authority("USER")
+                .point(point)
+                .version(version)
+                .build();
+        userMapper.registUser(user);
+        User savedUser = authMapper.findByUsernameAndPassword(new LoginDto("test", "test"));
+
+        PointInsertDto pointInsertDto = new PointInsertDto(savedUser.getId(), point);
+        pointMapper.insertPointWithVersion(pointInsertDto);
         // when
         int cnt = 200;
         int usePoint = 100;
@@ -87,7 +134,7 @@ class PointServiceV2Test {
         for (int i = 0; i < cnt; ++i) {
             executorService.submit(() -> {
                 try {
-                    pointServiceV1.usePoint(savedUser.getId(), usePoint);
+                    pointServiceV2.usePoint(savedUser.getId(), usePoint);
                     successCount.incrementAndGet();
                 } catch (Exception e) {
                     System.out.println(e.getMessage());
@@ -104,11 +151,11 @@ class PointServiceV2Test {
         //then
         User resultUser = userMapper.findById(savedUser.getId());
         System.out.println(resultUser);
-        int pointRecordCount = DBUtils.countAll("point_record", database, username, password);
+        int pointRecordCount = DBUtils.countAll("point_record2", database, username, password);
 
-        assertAll(() -> {
-            assertThat(resultUser.getPoint()).isZero();
-            assertThat(pointRecordCount).isEqualTo(point / usePoint + 1);
-        });
+        SoftAssertions softly = new SoftAssertions();
+        softly.assertThat(resultUser.getPoint()).isZero();
+        softly.assertThat(pointRecordCount).isEqualTo(point / usePoint + 1);
+        softly.assertAll();
     }
 }

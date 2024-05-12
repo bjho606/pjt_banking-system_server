@@ -39,5 +39,7 @@ public class PointServiceV3 {
 
         user.usePoint(pointAmount);
         userMapper.updatePoint(user);
+
+        pointMapper.insertPoint(new PointInsertDto(userId, pointAmount));
     }
 }
