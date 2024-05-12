@@ -3,16 +3,15 @@ package com.ssafy.dongsanbu.domain.user.mapper;
 import com.ssafy.dongsanbu.domain.user.dto.UserProfileImageUpdateDto;
 import com.ssafy.dongsanbu.domain.user.entity.Ingredient;
 import com.ssafy.dongsanbu.domain.user.entity.User;
-import org.apache.ibatis.annotations.Mapper;
-
 import java.util.Map;
+import org.apache.ibatis.annotations.Mapper;
 
 @Mapper
 public interface UserMapper {
 
     User findById(int id);
+
     User findByIdWithVersion(int id);
-    User findByIdForUpdate(int id);
 
     User findByIdForUpdate(int id);
 

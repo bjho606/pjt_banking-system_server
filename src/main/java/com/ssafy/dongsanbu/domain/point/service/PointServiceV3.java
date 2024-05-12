@@ -31,6 +31,7 @@ public class PointServiceV3 {
     @Transactional
     public void usePoint(int userId, int pointAmount) {
         User user = userMapper.findByIdForUpdate(userId);
+
         if(user == null) {
             throw new RuntimeException("User not found");
         }
@@ -39,7 +40,5 @@ public class PointServiceV3 {
 
         user.usePoint(pointAmount);
         userMapper.updatePoint(user);
-
-        pointMapper.insertPoint(new PointInsertDto(userId, pointAmount));
     }
 }

@@ -1,4 +1,4 @@
-package com.formssafe.global.aop;
+package com.ssafy.dongsanbu.global.aop;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
