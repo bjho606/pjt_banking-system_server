@@ -485,7 +485,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 로직
 1. 요청에서 access token과 refresh token을 파싱한다.
 2. access token 유효성을 검사한다.
-  - 토큰이 없거나, 유효하지 않거나, 만료되지 않았고, 로그아웃 db에도 없다면 인증이 성공한다.
+  - 토큰이 유효하고, 만료되지 않았고, 로그아웃 db에도 없다면 인증이 성공한다.
 3. 토큰이 만료되었다면, 유효한 refresh token인 경우 새 access token을 발급하여 쿠키에 설정한다.
 4. 이외의 경우는 401을 응답한다.
 
