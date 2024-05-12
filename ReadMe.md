@@ -27,6 +27,7 @@
 ![Screenshot_2024-05-13_at_7.54.57_AM](/uploads/63af247522b592ffe40888f9fe3164b9/Screenshot_2024-05-13_at_7.54.57_AM.png)
 
 ## 구현 결과
+
 - JWT 인증
   - 로그인 시 JWT access token, refresh token 발급
   - access token 만료 시 refresh token 기반 재발급
@@ -45,6 +46,7 @@
 3. 비관적 락을 통한 트랜잭션 처리
 
 JWT 기반 인증 방식을 알아보고 구현한다.
+
 ---
 ## 시나리오
 임의의 사용자가 최초에 10000 포인트를 가지고, 1번 요청 시 100 포인트가 차감되도록 총 200회의 요청을 보내려 한다. <br>
