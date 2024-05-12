@@ -23,9 +23,14 @@
   image:
   upload-locations: classpath:/static/images/
   ```
-- DB 추가 (개인 요청^^)
+- DB Schema
+![Screenshot_2024-05-13_at_7.54.57_AM](/uploads/63af247522b592ffe40888f9fe3164b9/Screenshot_2024-05-13_at_7.54.57_AM.png)
 
 ## 구현 결과
+- JWT 인증
+  - 로그인 시 JWT access token, refresh token 발급
+  - access token 만료 시 refresh token 기반 재발급
+  - 토큰 로그아웃 (이론)
 - 트랜잭션 처리
   - 동시성 유발
   - 낙관적 락을 이용한 동시성 해결 방법
@@ -39,6 +44,7 @@
 2. 낙관적 락을 통한 트랜잭션 처리
 3. 비관적 락을 통한 트랜잭션 처리
 
+JWT 기반 인증 방식을 알아보고 구현한다.
 ---
 ## 시나리오
 임의의 사용자가 최초에 10000 포인트를 가지고, 1번 요청 시 100 포인트가 차감되도록 총 200회의 요청을 보내려 한다. <br>
@@ -266,9 +272,234 @@
   - 단일 DB 환경에만 적용 가능
   - 반드시 한 트랜잭션이 완료될 때까지 나머지가 대기해야하므로 대기시간이 오래 걸림 => 요청 수가 많아지면 대기시간이 길어짐
 
+<br />
+
+### JWT 인증
+
+---
+
+#### 사용자 로그인 및 로그아웃
+
+```java
+@Service
+@RequiredArgsConstructor
+public class AuthService {
+    private final AuthMapper authMapper;
+    private final UserMapper userMapper;
+    private final LogoutTokenMapper logoutTokenMapper;
+    private final JwtResolver jwtResolver;
+    private final JwtProvider jwtProvider;
+
+    public LoginResponse login(LoginRequest request) {
+        User user = findUserByUsernameAndPassword(request);
+
+        String accessToken = createAccessToken(user);
+        String refreshToken = createRefreshToken(user);
+        return new LoginResponse(refreshToken, accessToken);
+    }
+
+    private User findUserByUsernameAndPassword(LoginRequest request) {
+        Ingredient ingredient = userMapper.findIngredientById(request.username());
+        String encodedPassword = MyCrypt.byteArrayToHex(
+                MyCrypt.getSHA256(request.password(), ingredient.getSalt()));
+
+        LoginDto loginDto = new LoginDto(request.username(), encodedPassword);
+        User user = authMapper.findByUsernameAndPassword(loginDto);
+        if (user == null) {
+            throw new BadRequestException("아이디 또는 비밀번호가 일치하지 않습니다.");
+        }
+
+        return user;
+    }
+
+    private String createAccessToken(User user) {
+        LocalDateTime expiredTime = jwtProvider.calAccessTokenExpirationTime(LocalDateTime.now());
+        return jwtProvider.createToken(user, expiredTime);
+    }
+
+    private String createRefreshToken(User user) {
+        LocalDateTime expiredTime = jwtProvider.calRefreshTokenExpirationTime(LocalDateTime.now());
+        return jwtProvider.createToken(user, expiredTime);
+    }
+
+    @Transactional
+    public void logout(String accessToken) {
+        String memberName = jwtResolver.getName(accessToken);
+
+        logoutAccessToken(memberName, accessToken);
+        logoutRefreshToken(memberName);
+    }
+
+    private void logoutAccessToken(String memberName, String accessToken) {
+        long expiration = jwtResolver.getExpirationTime(accessToken);
+        logoutTokenMapper.save(new AccessToken(memberName, accessToken), expiration);
+    }
+
+    private void logoutRefreshToken(String memberName) {
+        logoutTokenMapper.delete(new RefreshToken(memberName));
+    }
+}
+```
+
+```java
+package com.ssafy.dongsanbu.domain.auth.controller;
+
+import com.ssafy.dongsanbu.domain.auth.dto.LoginRequest;
+import com.ssafy.dongsanbu.domain.auth.dto.LoginResponse;
+import com.ssafy.dongsanbu.domain.auth.service.AuthService;
+import com.ssafy.dongsanbu.global.util.CookieUtil;
+import com.ssafy.dongsanbu.infra.jwt.JwtProperties;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/v1/auth")
+@RequiredArgsConstructor
+public class AuthController {
+    private final JwtProperties jwtProperties;
+    private final AuthService authService;
+
+    @PostMapping("/login")
+    public void login(@RequestBody LoginRequest request, HttpServletResponse response) {
+        LoginResponse token = authService.login(request);
+        CookieUtil.addCookie(response,
+                jwtProperties.getAccessTokenCookieName(),
+                token.accessToken(),
+                jwtProperties.getAccessTokenDuration().getSeconds());
+        CookieUtil.addCookie(response,
+                jwtProperties.getRefreshTokenCookieName(),
+                token.refreshToken(),
+                jwtProperties.getRefreshTokenDuration().getSeconds());
+    }
+
+    @GetMapping("/logout")
+    public void logout(HttpServletRequest request, HttpServletResponse response) {
+        String accessToken = CookieUtil.getCookieValue(request, jwtProperties.getAccessTokenCookieName())
+                .orElseThrow(() -> new IllegalStateException("쿠키에서 access token을 가져올 수 없습니다."));
+        authService.logout(accessToken);
+
+        CookieUtil.deleteCookie(request, response, jwtProperties.getAccessTokenCookieName());
+        CookieUtil.deleteCookie(request, response, jwtProperties.getRefreshTokenCookieName());
+    }
+}
+```
+로그인
+- 사용자의 아이디와 비밀번호 기반으로 사용자 정보를 가져온다.
+- 만약 잘못된 아이디와 비밀번호라면 400을 응답한다.
+- 사용자의 이름에 기반하여 access token과 refresh token을 만든다.
+  - refresh token은 유효기간이 기므로, 발급 후 db에 저장하여 서버에서 만료 가능하도록 한다.
+- 토큰을 httponly로 쿠키에 저장하여 응답한다.
+
+로그아웃
+- refresh token과 access token을 로그아웃 db에 저장한다.
+- refresh token, access token 쿠키를 삭제한다.
+
+<br />
+
+#### JWT 기반 사용자 인증
+
+```java
+@RequiredArgsConstructor
+@Slf4j
+@Component
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
+    private final JwtProvider jwtProvider;
+    private final JwtResolver jwtResolver;
+    private final JwtProperties jwtProperties;
+
+    private static void handleUnsuccess(String requestUri, HttpServletResponse response) {
+        log.debug("No valid token: {}", requestUri);
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+    }
+
+    @Override
+    protected void doFilterInternal(@NonNull HttpServletRequest request,
+                                    @NonNull HttpServletResponse response,
+                                    @NonNull FilterChain filterChain) throws ServletException, IOException {
+        if (isLoginOrSignupRequest(request)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        String accessToken = resolveAccessToken(request);
+        String refreshToken = resolveRefreshToken(request);
+        String requestUri = request.getRequestURI();
+
+        if (verify(accessToken)) {
+            handleSuccess(accessToken, requestUri);
+        } else if (verify(refreshToken)) {
+            createNewAccessTokenAndHandleSuccess(response, refreshToken);
+        } else {
+            handleUnsuccess(requestUri, response);
+            return;
+        }
+
+        filterChain.doFilter(request, response);
+    }
+
+    private boolean isLoginOrSignupRequest(HttpServletRequest request) {
+        String requestURI = request.getRequestURI();
+        return requestURI.equals("/api/v1/auth/login");
+    }
+
+    private String resolveAccessToken(HttpServletRequest request) {
+        return CookieUtil.getCookieValue(request, jwtProperties.getAccessTokenCookieName())
+                .orElse(null);
+    }
+
+    private String resolveRefreshToken(HttpServletRequest request) {
+        return CookieUtil.getCookieValue(request, jwtProperties.getRefreshTokenCookieName())
+                .orElse(null);
+    }
+
+    private boolean verify(String token) {
+        return StringUtils.hasText(token)
+                && jwtProvider.isValidToken(token);
+    }
+
+    private void handleSuccess(String token, String requestUri) {
+        User user = jwtResolver.getUser(token);
+        log.debug("{} stored in context: {}", user.getUsername(), requestUri);
+    }
+
+    private void createNewAccessTokenAndHandleSuccess(
+            HttpServletResponse response, String refreshToken) {
+        User user = jwtResolver.getUser(refreshToken);
+        LocalDateTime expiredTime = jwtProvider.calAccessTokenExpirationTime(LocalDateTime.now());
+        String accessToken = jwtProvider.createToken(user, expiredTime);
+
+        CookieUtil.addCookie(response, jwtProperties.getAccessTokenCookieName(), accessToken,
+                jwtProperties.getAccessTokenDuration().getSeconds());
+    }
+}
+
+```
+사용자 인증이 필요한 모든 api에 대해 적용한다.
+
+로직
+1. 요청에서 access token과 refresh token을 파싱한다.
+2. access token 유효성을 검사한다.
+  - 토큰이 없거나, 유효하지 않거나, 만료되지 않았고, 로그아웃 db에도 없다면 인증이 성공한다.
+3. 토큰이 만료되었다면, 유효한 refresh token인 경우 새 access token을 발급하여 쿠키에 설정한다.
+4. 이외의 경우는 401을 응답한다.
+
+참고) 로그아웃 처리는 코드에 구현하지 않았습니다.
+
 ---
 # 프로젝트 소감
 ### 박민지
+```
+트랜잭션 처리를 코드로 공부해보며 트랜잭션을 안전하게 처리하기 위해 
+동시성 이슈 방지, 데드락, 커넥션 타임아웃으로 인한 요청 실패에 대한 보상 로직을 구현해야 한다는 점을 배웠습니다.
+이외에도 다른 트랜잭션을 안전하게 사용할 수 없는 단일 DB가 아닌 멀티 DB 사용, 복제, 장애 상황 등에 대한 
+해결 방안을 알아나가며 공부하는 방식으로, 추상적이었던 안전한 트랜잭션 처리를 어떻게 공부해야 하는지 배웠습니다.
+```
 
 ### 변재호
 ```
