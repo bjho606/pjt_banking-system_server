@@ -81,13 +81,11 @@ JWT 기반 인증 방식을 알아보고 구현한다.
             if (user == null) {
                 throw new RuntimeException("User not found");
             }
-            pointMapper.insertPoint(new PointInsertDto(userId, -pointAmount));
     
             pointMapper.insertPoint(new PointInsertDto(userId, -pointAmount));
     
             user.usePoint(pointAmount);
             userMapper.updatePoint(user);
-    
         }
     }
     ```
