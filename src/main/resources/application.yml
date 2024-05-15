@@ -1,0 +1,31 @@
+spring:
+  config:
+    import: classpath:privacy.yml
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${db.host}:${db.port}/${db.database}?useSSL=false&useUnicode=true&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
+    username: ${db.username}
+    password: ${db.password}
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    database: mysql
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+    properties:
+      hibernate:
+        show_sql: true
+        format_sql: true
+        use_sql_comments: true
+        globally_quoted_identifiers: true   # [db 예약어]와 [필드 이름]이 같은 경우 에러나지 않게 처리
+
+image:
+  upload-locations: ${image.upload-locations}
+
+jwt:
+  access-token-cookie-name: access_token
+  refresh-token-cookie-name: refresh_token
+  access-token-duration: 1800000
+  refresh-token-duration: 86400000
+  secret: 1234554321sdfasjfdhasjkerqwioeu42uihrfjskablasdfljkshalfksdf2342rsdvasdfgqeerfswdfasfasdfq3453sdd
