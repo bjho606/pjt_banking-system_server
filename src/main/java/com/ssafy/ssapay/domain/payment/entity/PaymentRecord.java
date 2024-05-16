@@ -1,18 +1,25 @@
 package com.ssafy.ssapay.domain.payment.entity;
 
 import com.ssafy.ssapay.domain.account.entity.Account;
-import com.ssafy.ssapay.domain.user.entity.User;
-import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
-@Setter
 @Table(name="payment_record")
+@NoArgsConstructor
 public class PaymentRecord {
 
     @Id
@@ -47,5 +54,14 @@ public class PaymentRecord {
         updatedAt = LocalDateTime.now();
     }
 
-    // Getters and Setters
+    public PaymentRecord(Account toAccount, BigDecimal amount) {
+        this.toAccount = toAccount;
+        this.amount = amount;
+    }
+
+    public PaymentRecord(Account fromAccount, Account toAccount, BigDecimal amount) {
+        this.fromAccount = fromAccount;
+        this.toAccount = toAccount;
+        this.amount = amount;
+    }
 }

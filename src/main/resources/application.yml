@@ -16,8 +16,6 @@ spring:
     properties:
       hibernate:
         show_sql: true
-        format_sql: true
-        use_sql_comments: true
         globally_quoted_identifiers: true   # [db 예약어]와 [필드 이름]이 같은 경우 에러나지 않게 처리
 
 image:

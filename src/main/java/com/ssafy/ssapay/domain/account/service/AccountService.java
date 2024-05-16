@@ -6,24 +6,20 @@ import com.ssafy.ssapay.domain.payment.entity.PaymentRecord;
 import com.ssafy.ssapay.domain.payment.repository.PaymentRecordRepository;
 import com.ssafy.ssapay.domain.user.entity.User;
 import com.ssafy.ssapay.domain.user.repository.UserRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.util.Random;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class AccountService {
-
-    @Autowired
-    private AccountRepository accountRepository;
-
-    @Autowired
-    private PaymentRecordRepository paymentRecordRepository;
-
-    @Autowired
-    private UserRepository userRepository;
+    private final AccountRepository accountRepository;
+    private final PaymentRecordRepository paymentRecordRepository;
+    private final UserRepository userRepository;
 
     // 계좌 생성
     @Transactional
@@ -40,11 +36,9 @@ public class AccountService {
         }
 
         String newAccountNumber = sb.toString();
+        Account account = new Account(user, newAccountNumber);
 
-        Account account = new Account();
-        account.setUser(user);
-        account.setAccountNumber(newAccountNumber);
-//        account.setBalance(BigDecimal.valueOf(0));
+        log.debug("createAccount {} with {}", userId, newAccountNumber);
 
         return accountRepository.save(account);
     }
@@ -63,15 +57,12 @@ public class AccountService {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new RuntimeException("Account not found"));
 
-        account.setBalance(account.getBalance().add(amount));
+        account.addBalance(amount);
 
-        accountRepository.save(account);
-
-        PaymentRecord paymentRecord = new PaymentRecord();
-        paymentRecord.setFromAccount(account);
-        paymentRecord.setAmount(amount);
-
+        PaymentRecord paymentRecord = new PaymentRecord(account, amount);
         paymentRecordRepository.save(paymentRecord);
+
+        log.debug("deposit {} {}", accountId, amount);
     }
 
     // 계좌 출금
@@ -80,19 +71,16 @@ public class AccountService {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new RuntimeException("Account not found"));
 
-        if (account.getBalance().compareTo(amount) < 0) {
+        if (account.isLess(amount)) {
             throw new RuntimeException("잔액 부족");
         }
 
-        account.setBalance(account.getBalance().subtract(amount));
+        account.substractBalance(amount);
 
-        accountRepository.save(account);
-
-        PaymentRecord paymentRecord = new PaymentRecord();
-        paymentRecord.setFromAccount(account);
-        paymentRecord.setAmount(amount.multiply(BigDecimal.valueOf(-1)));
-
+        PaymentRecord paymentRecord = new PaymentRecord(account, amount.negate());
         paymentRecordRepository.save(paymentRecord);
+
+        log.debug("withdraw {} {}", accountId, amount);
     }
 
     // 계좌 송금
@@ -103,22 +91,17 @@ public class AccountService {
         Account toAccount = accountRepository.findById(toAccountId)
                 .orElseThrow(() -> new RuntimeException("To account not found"));
 
-        if (fromAccount.getBalance().compareTo(amount) < 0) {
+        if (fromAccount.isLess(amount)) {
             throw new RuntimeException("잔액 부족");
         }
 
-        fromAccount.setBalance(fromAccount.getBalance().subtract(amount));
-        toAccount.setBalance(toAccount.getBalance().add(amount));
+        fromAccount.substractBalance(amount);
+        toAccount.addBalance(amount);
 
-        accountRepository.save(fromAccount);
-        accountRepository.save(toAccount);
-
-        PaymentRecord paymentRecord = new PaymentRecord();
-        paymentRecord.setFromAccount(fromAccount);
-        paymentRecord.setToAccount(toAccount);
-        paymentRecord.setAmount(amount);
-
+        PaymentRecord paymentRecord = new PaymentRecord(fromAccount, toAccount, amount);
         paymentRecordRepository.save(paymentRecord);
+
+        log.debug("transfer {} to {} {}", fromAccountId, toAccountId, amount);
     }
 
     // 계좌 삭제
@@ -126,9 +109,8 @@ public class AccountService {
     public void deleteAccount(Long accountId) {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new RuntimeException("Account not found"));
-        account.setDeleted(true);
-        System.out.println(account);
+        account.delete();
 
-        accountRepository.save(account);
+        log.debug("delete {} to {} {}", accountId);
     }
 }
