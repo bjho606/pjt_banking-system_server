@@ -8,7 +8,6 @@ import com.ssafy.ssapay.domain.account.dto.response.AccountIdResponse;
 import com.ssafy.ssapay.domain.account.dto.response.BalanceResponse;
 import com.ssafy.ssapay.domain.account.entity.Account;
 import com.ssafy.ssapay.domain.user.entity.User;
-import com.ssafy.ssapay.util.DBUtils;
 import jakarta.persistence.EntityManager;
 import java.math.BigDecimal;
 import org.assertj.core.api.SoftAssertions;
@@ -17,7 +16,6 @@ import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,17 +33,6 @@ class AccountServiceTest {
     public AccountServiceTest(AccountService accountService, EntityManager em) {
         this.accountService = accountService;
         this.em = em;
-    }
-
-    @Value("${db.database}")
-    private String database;
-    @Value("${db.username}")
-    private String username;
-    @Value("${db.password}")
-    private String password;
-
-    void setUp(String tableName) {
-        DBUtils.truncate(tableName, database, username, password);
     }
 
     @Test

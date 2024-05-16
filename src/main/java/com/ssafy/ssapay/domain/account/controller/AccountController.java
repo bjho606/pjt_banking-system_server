@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+
 @RestController
 @RequiredArgsConstructor
 @Slf4j
@@ -25,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AccountController {
     private final AccountService accountService;
 
-    @PostMapping("/")
+    @PostMapping
     public AccountIdResponse createAccount(@RequestBody AccountCreateRequest request) {
         return accountService.createAccount(request.userId());
     }
@@ -50,7 +51,7 @@ public class AccountController {
         accountService.transfer(request.fromAccountId(), request.toAccountId(), request.amount());
     }
 
-    @DeleteMapping("/")
+    @DeleteMapping
     public void deleteAccount(@RequestBody AccountDeleteRequest request) {
         accountService.deleteAccount(request.accountId());
     }
