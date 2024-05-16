@@ -1,0 +1,155 @@
+package com.ssafy.ssapay.domain.account.service;
+
+import static com.ssafy.ssapay.util.Fixture.createUser;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.ssafy.ssapay.domain.account.entity.Account;
+import com.ssafy.ssapay.domain.user.entity.User;
+import com.ssafy.ssapay.util.DBUtils;
+import jakarta.persistence.EntityManager;
+import java.math.BigDecimal;
+import org.assertj.core.api.SoftAssertions;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.DisplayNameGeneration;
+import org.junit.jupiter.api.DisplayNameGenerator;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.transaction.annotation.Transactional;
+
+@DisplayName("계좌 기본 CRUD 테스트")
+@DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@Transactional
+@SpringBootTest
+class AccountServiceTest {
+    private final AccountService accountService;
+    private final EntityManager em;
+
+    @Autowired
+    public AccountServiceTest(AccountService accountService, EntityManager em) {
+        this.accountService = accountService;
+        this.em = em;
+    }
+
+    @Value("${db.database}")
+    private String database;
+    @Value("${db.username}")
+    private String username;
+    @Value("${db.password}")
+    private String password;
+
+    void setUp(String tableName) {
+        DBUtils.truncate(tableName, database, username, password);
+    }
+
+    @Test
+    void 계좌를_생성할_수_있다() {
+        // given
+        User user = createUser("test", "test", "test@test.com");
+        em.persist(user);
+        Long userId = user.getId();
+        // when
+        Account result = accountService.createAccount(userId);
+        // then
+        SoftAssertions s = new SoftAssertions();
+        s.assertThat(result).isNotNull();
+        s.assertThat(result.getUser()).isEqualTo(user);
+        s.assertAll();
+    }
+
+    @Test
+    void 계좌_잔액을_확인할_수_있다() {
+        // given
+        User user = createUser("test", "test", "test@test.com");
+        Account account = new Account(user, "11111111");
+        account.addBalance(new BigDecimal(10000));
+        em.persist(user);
+        em.persist(account);
+        // when
+        BigDecimal result = accountService.checkBalance(account.getId());
+        // then
+        SoftAssertions s = new SoftAssertions();
+        s.assertThat(result).isNotNull();
+        s.assertThat(result).isEqualTo(new BigDecimal(10000));
+        s.assertAll();
+    }
+
+    @Test
+    void 계좌_입금을_할_수_있다() {
+        // given
+        User user = createUser("test", "test", "test@test.com");
+        Account account = new Account(user, "11111111");
+        em.persist(user);
+        em.persist(account);
+        // when
+        accountService.deposit(account.getId(), new BigDecimal(10000));
+        // then
+        SoftAssertions s = new SoftAssertions();
+        s.assertThat(accountService.checkBalance(account.getId())).isEqualTo(new BigDecimal(10000));
+        s.assertAll();
+    }
+
+    @Test
+    void 계좌_출금을_할_수_있다() {
+        // given
+        User user = createUser("test", "test", "test@test.com");
+        Account account = new Account(user, "11111111");
+        account.addBalance(new BigDecimal(10000));
+        em.persist(user);
+        em.persist(account);
+        // when
+        accountService.withdraw(account.getId(), new BigDecimal(5000));
+        // then
+        SoftAssertions s = new SoftAssertions();
+        s.assertThat(accountService.checkBalance(account.getId())).isEqualTo(new BigDecimal(5000));
+        s.assertAll();
+    }
+
+    @Test
+    void 계좌_잔액이_부족하면_출금_시_예외가_발생한다() {
+        // given
+        User user = createUser("test", "test", "test@test.com");
+        Account account = new Account(user, "11111111");
+        account.addBalance(new BigDecimal(10000));
+        em.persist(user);
+        em.persist(account);
+        // when then
+        assertThrows(RuntimeException.class, () -> accountService.withdraw(account.getId(), new BigDecimal(20000)));
+    }
+
+    @Test
+    void 계좌_송금을_할_수_있다() {
+        // given
+        User user = createUser("test", "test", "test@test.com");
+        Account fromAccount = new Account(user, "11111111");
+        Account toAccount = new Account(user, "22222222");
+        fromAccount.addBalance(new BigDecimal(10000));
+        em.persist(user);
+        em.persist(fromAccount);
+        em.persist(toAccount);
+        // when
+        accountService.transfer(fromAccount.getId(), toAccount.getId(), new BigDecimal(5000));
+        // then
+        SoftAssertions s = new SoftAssertions();
+        s.assertThat(accountService.checkBalance(fromAccount.getId())).isEqualTo(new BigDecimal(5000));
+        s.assertThat(accountService.checkBalance(toAccount.getId())).isEqualTo(new BigDecimal(5000));
+        s.assertAll();
+    }
+
+    @Test
+    void 계좌를_삭제할_수_있다() {
+        // given
+        User user = createUser("test", "test", "test@test.com");
+        Account account = new Account(user, "11111111");
+        em.persist(user);
+        em.persist(account);
+        // when
+        accountService.deleteAccount(account.getId());
+        // then
+        assertTrue(account.isDeleted());
+    }
+}
