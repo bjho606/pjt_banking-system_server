@@ -1,6 +1,9 @@
 ### custom ###
 src/main/resources/privacy.yml
 src/main/resources/static
+node_modules
+infra/package-lock.json
+
 
 HELP.md
 .gradle
