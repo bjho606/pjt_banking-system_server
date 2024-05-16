@@ -2,11 +2,18 @@ package com.ssafy.ssapay.domain.account.entity;
 
 import com.ssafy.ssapay.domain.user.entity.User;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.time.LocalDateTime;
 import java.math.BigDecimal;
 
 @Entity
+@Getter
+@Setter
+@ToString
 public class Account {
 
     @Id
@@ -21,10 +28,12 @@ public class Account {
     private String accountNumber;
 
     @Column(nullable = false)
-    private BigDecimal balance;
+    @ColumnDefault("0")
+    private BigDecimal balance = BigDecimal.valueOf(0);
 
     @Column
-    private boolean isDeleted;
+    @ColumnDefault("0")
+    private boolean isDeleted = false;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
