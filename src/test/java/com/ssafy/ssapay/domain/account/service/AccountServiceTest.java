@@ -4,9 +4,10 @@ import static com.ssafy.ssapay.util.Fixture.createUser;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.ssafy.ssapay.domain.account.dto.response.AccountIdResponse;
+import com.ssafy.ssapay.domain.account.dto.response.BalanceResponse;
 import com.ssafy.ssapay.domain.account.entity.Account;
 import com.ssafy.ssapay.domain.user.entity.User;
-import com.ssafy.ssapay.util.DBUtils;
 import jakarta.persistence.EntityManager;
 import java.math.BigDecimal;
 import org.assertj.core.api.SoftAssertions;
@@ -15,7 +16,6 @@ import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,17 +35,6 @@ class AccountServiceTest {
         this.em = em;
     }
 
-    @Value("${db.database}")
-    private String database;
-    @Value("${db.username}")
-    private String username;
-    @Value("${db.password}")
-    private String password;
-
-    void setUp(String tableName) {
-        DBUtils.truncate(tableName, database, username, password);
-    }
-
     @Test
     void 계좌를_생성할_수_있다() {
         // given
@@ -53,11 +42,14 @@ class AccountServiceTest {
         em.persist(user);
         Long userId = user.getId();
         // when
-        Account result = accountService.createAccount(userId);
+        AccountIdResponse response = accountService.createAccount(userId);
         // then
+        Long accountId = response.accountId();
+        Account account = em.find(Account.class, accountId);
+
         SoftAssertions s = new SoftAssertions();
-        s.assertThat(result).isNotNull();
-        s.assertThat(result.getUser()).isEqualTo(user);
+        s.assertThat(account).isNotNull();
+        s.assertThat(account.getUser().getId()).isEqualTo(user.getId());
         s.assertAll();
     }
 
@@ -70,11 +62,13 @@ class AccountServiceTest {
         em.persist(user);
         em.persist(account);
         // when
-        BigDecimal result = accountService.checkBalance(account.getId());
+        BalanceResponse response = accountService.checkBalance(account.getId());
         // then
+        BigDecimal balance = response.balance();
+
         SoftAssertions s = new SoftAssertions();
-        s.assertThat(result).isNotNull();
-        s.assertThat(result).isEqualTo(new BigDecimal(10000));
+        s.assertThat(balance).isNotNull();
+        s.assertThat(balance).isEqualTo(new BigDecimal(10000));
         s.assertAll();
     }
 
@@ -89,7 +83,7 @@ class AccountServiceTest {
         accountService.deposit(account.getId(), new BigDecimal(10000));
         // then
         SoftAssertions s = new SoftAssertions();
-        s.assertThat(accountService.checkBalance(account.getId())).isEqualTo(new BigDecimal(10000));
+        s.assertThat(account.getBalance()).isEqualTo(new BigDecimal(10000));
         s.assertAll();
     }
 
@@ -105,7 +99,7 @@ class AccountServiceTest {
         accountService.withdraw(account.getId(), new BigDecimal(5000));
         // then
         SoftAssertions s = new SoftAssertions();
-        s.assertThat(accountService.checkBalance(account.getId())).isEqualTo(new BigDecimal(5000));
+        s.assertThat(account.getBalance()).isEqualTo(new BigDecimal(5000));
         s.assertAll();
     }
 
@@ -135,8 +129,8 @@ class AccountServiceTest {
         accountService.transfer(fromAccount.getId(), toAccount.getId(), new BigDecimal(5000));
         // then
         SoftAssertions s = new SoftAssertions();
-        s.assertThat(accountService.checkBalance(fromAccount.getId())).isEqualTo(new BigDecimal(5000));
-        s.assertThat(accountService.checkBalance(toAccount.getId())).isEqualTo(new BigDecimal(5000));
+        s.assertThat(fromAccount.getBalance()).isEqualTo(new BigDecimal(5000));
+        s.assertThat(toAccount.getBalance()).isEqualTo(new BigDecimal(5000));
         s.assertAll();
     }
 

@@ -1,5 +1,7 @@
 package com.ssafy.ssapay.domain.account.service;
 
+import com.ssafy.ssapay.domain.account.dto.response.AccountIdResponse;
+import com.ssafy.ssapay.domain.account.dto.response.BalanceResponse;
 import com.ssafy.ssapay.domain.account.entity.Account;
 import com.ssafy.ssapay.domain.account.repository.AccountRepository;
 import com.ssafy.ssapay.domain.payment.entity.PaymentRecord;
@@ -23,7 +25,7 @@ public class AccountService {
 
     // 계좌 생성
     @Transactional
-    public Account createAccount(Long userId) {
+    public AccountIdResponse createAccount(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -40,15 +42,16 @@ public class AccountService {
 
         log.debug("createAccount {} with {}", userId, newAccountNumber);
 
-        return accountRepository.save(account);
+        Account newAccount = accountRepository.save(account);
+
+        return new AccountIdResponse(newAccount.getId());
     }
 
     // 계좌 잔액 확인
-    public BigDecimal checkBalance(Long accountId) {
+    public BalanceResponse checkBalance(Long accountId) {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new RuntimeException("Account not found"));
-
-        return account.getBalance();
+        return new BalanceResponse(account.getBalance());
     }
 
     // 계좌 입금

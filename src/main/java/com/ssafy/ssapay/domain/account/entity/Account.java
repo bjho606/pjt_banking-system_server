@@ -13,12 +13,14 @@ import jakarta.persistence.PreUpdate;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.hibernate.annotations.ColumnDefault;
 
 @Entity
 @Getter
 @ToString
+@NoArgsConstructor
 public class Account {
 
     @Id
