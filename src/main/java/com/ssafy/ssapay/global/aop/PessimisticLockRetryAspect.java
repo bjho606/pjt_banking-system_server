@@ -1,24 +1,23 @@
 package com.ssafy.ssapay.global.aop;
 
-import jakarta.persistence.OptimisticLockException;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
-import org.hibernate.StaleObjectStateException;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
-import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.dao.PessimisticLockingFailureException;
+import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.stereotype.Component;
 
 @Order(Ordered.LOWEST_PRECEDENCE - 1)
 @Aspect
 @Component
-public class OptimisticLockRetryAspect {
+public class PessimisticLockRetryAspect {
     private static final int MAX_RETRIES = 20;
     private static final int RETRY_DELAY_MS = 100;
 
-    @Pointcut("@annotation(com.ssafy.ssapay.global.aop.OptimisticRetry)")
+    @Pointcut("@annotation(com.ssafy.ssapay.global.aop.PessimisticRetry)")
     public void retry() {
     }
 
@@ -28,10 +27,7 @@ public class OptimisticLockRetryAspect {
         for (int attempt = 0; attempt < MAX_RETRIES; attempt++) {
             try {
                 return joinPoint.proceed();
-            } catch (IllegalStateException
-                     | OptimisticLockException
-                     | ObjectOptimisticLockingFailureException
-                     | StaleObjectStateException
+            } catch (PessimisticLockingFailureException | JpaSystemException
                     e) {
                 exceptionHolder = e;
                 Thread.sleep(RETRY_DELAY_MS);

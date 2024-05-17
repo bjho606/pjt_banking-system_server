@@ -10,6 +10,9 @@ import com.ssafy.ssapay.domain.user.entity.User;
 import com.ssafy.ssapay.domain.user.repository.UserRepository;
 import java.math.BigDecimal;
 import java.util.Random;
+
+import com.ssafy.ssapay.global.aop.OptimisticRetry;
+import com.ssafy.ssapay.global.aop.PessimisticRetry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -88,11 +91,28 @@ public class AccountService {
 
     // 계좌 송금
     @Transactional
+    // [방법1. 데드락 발생 시, 재시도 하는 방법]
+//    @PessimisticRetry
     public void transfer(Long fromAccountId, Long toAccountId, BigDecimal amount) {
-        Account fromAccount = accountRepository.findById(fromAccountId)
-                .orElseThrow(() -> new RuntimeException("From account not found"));
-        Account toAccount = accountRepository.findById(toAccountId)
-                .orElseThrow(() -> new RuntimeException("To account not found"));
+//        Account fromAccount = accountRepository.findById(fromAccountId)
+//                .orElseThrow(() -> new RuntimeException("From account not found"));
+//        Account toAccount = accountRepository.findById(toAccountId)
+//                .orElseThrow(() -> new RuntimeException("To account not found"));
+
+        // [방법2. 애초에 데드락이 발생하지 않도록, 무조건 더 작은 accountId가 락을 먼저 획득하도록 하는 방법]
+        Account fromAccount;
+        Account toAccount;
+        if (fromAccountId < toAccountId) {
+            fromAccount = accountRepository.findById(fromAccountId)
+                    .orElseThrow(() -> new RuntimeException("From account not found"));
+            toAccount = accountRepository.findById(toAccountId)
+                    .orElseThrow(() -> new RuntimeException("To account not found"));
+        } else {
+            toAccount = accountRepository.findById(toAccountId)
+                    .orElseThrow(() -> new RuntimeException("To account not found"));
+            fromAccount = accountRepository.findById(fromAccountId)
+                    .orElseThrow(() -> new RuntimeException("From account not found"));
+        }
 
         if (fromAccount.isLess(amount)) {
             throw new RuntimeException("잔액 부족");
@@ -100,6 +120,9 @@ public class AccountService {
 
         fromAccount.substractBalance(amount);
         toAccount.addBalance(amount);
+
+        accountRepository.save(fromAccount);
+        accountRepository.save(toAccount);
 
         PaymentRecord paymentRecord = new PaymentRecord(fromAccount, toAccount, amount);
         paymentRecordRepository.save(paymentRecord);

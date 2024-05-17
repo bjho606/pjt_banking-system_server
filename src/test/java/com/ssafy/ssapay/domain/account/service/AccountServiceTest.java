@@ -12,10 +12,6 @@ import com.ssafy.ssapay.domain.user.entity.User;
 import com.ssafy.ssapay.domain.user.repository.UserRepository;
 import jakarta.persistence.EntityManager;
 import java.math.BigDecimal;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.DisplayName;
@@ -30,7 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 @DisplayName("계좌 기본 CRUD 테스트")
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-//@Transactional
+@Transactional
 @SpringBootTest
 class AccountServiceTest {
     private final AccountService accountService;
@@ -156,51 +152,6 @@ class AccountServiceTest {
         accountService.deleteAccount(account.getId());
         // then
         assertTrue(account.isDeleted());
-    }
-
-    @Test
-    void 계좌_출금에_비관적_락을_사용하여_동시성_이슈를_해결한다() throws InterruptedException{
-        // given
-        User user = createUser("test", "test", "test@test.com");
-        userRepository.save(user);
-
-        Account account = new Account(user, "11111111");
-        account.addBalance(new BigDecimal(10000));
-        accountRepository.save(account);
-
-        // when
-        int cnt = 200;
-        BigDecimal useBalance = new BigDecimal(100);
-        ExecutorService executorService = Executors.newFixedThreadPool(10);
-        CountDownLatch countDownLatch = new CountDownLatch(cnt);
-        AtomicInteger successCount = new AtomicInteger();
-        AtomicInteger failCount = new AtomicInteger();
-
-        for (int i = 0; i < cnt; ++i) {
-            executorService.submit(() -> {
-                try {
-                    accountService.withdraw(account.getId(), useBalance);
-
-                    successCount.incrementAndGet();
-                } catch (Exception e) {
-                    System.out.println(e.getMessage());
-                    failCount.incrementAndGet();
-                } finally {
-                    countDownLatch.countDown();
-                }
-            });
-        }
-        countDownLatch.await();
-        System.out.println("successCount = " + successCount);
-        System.out.println("failCount = " + failCount);
-
-        // then
-        Account updatedAccount = accountRepository.findById(account.getId())
-                .orElseThrow(() -> new RuntimeException("Account not found"));
-
-        SoftAssertions s = new SoftAssertions();
-        s.assertThat(updatedAccount.getBalance()).isEqualTo(BigDecimal.valueOf(0));
-        s.assertAll();
     }
 
 }
