@@ -11,12 +11,12 @@ import org.springframework.data.repository.query.Param;
 
 public interface AccountRepository extends JpaRepository<Account, Long> {
 
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             SELECT a FROM Account a WHERE a.id = :id and a.isDeleted = false
             """)
     Optional<Account> findById(@Param("id") Long id);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
             SELECT a FROM Account a WHERE a.id = :id and a.isDeleted = false
             """)

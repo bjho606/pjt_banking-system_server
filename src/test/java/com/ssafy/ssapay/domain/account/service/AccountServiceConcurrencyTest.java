@@ -45,7 +45,45 @@ class AccountServiceConcurrencyTest {
     }
 
     @Test
-    void 계좌_출금에_비관적_락을_사용하여_동시성_이슈를_해결한다() throws InterruptedException{
+    void 동시에_입금_요청을_보낸다() throws InterruptedException {
+        int totalCount = 200;
+        User user = createUser("user", "user", "user@email.com");
+        Account account = new Account(user, String.valueOf(user.getId()));
+        userRepository.save(user);
+        accountRepository.save(account);
+        //when
+        ExecutorService executorService = Executors.newFixedThreadPool(20);
+        CountDownLatch countDownLatch = new CountDownLatch(totalCount);
+        AtomicInteger successCount = new AtomicInteger();
+        AtomicInteger failCount = new AtomicInteger();
+        for (int i = 0; i < totalCount; ++i) {
+            executorService.submit(() -> {
+                try {
+                    accountService.deposit(account.getId(), new BigDecimal("10000"));
+                    successCount.incrementAndGet();
+                } catch (Exception e) {
+                    System.out.println(e.getMessage());
+                    failCount.incrementAndGet();
+                } finally {
+                    countDownLatch.countDown();
+                }
+            });
+        }
+
+        countDownLatch.await();
+        System.out.println("successCount = " + successCount);
+        System.out.println("failCount = " + failCount);
+        //then
+        Account result = em.find(Account.class, account.getId());
+        SoftAssertions softly = new SoftAssertions();
+        softly.assertThat(successCount.get()).isEqualTo(totalCount);
+        softly.assertThat(result.getBalance()).isEqualTo(new BigDecimal("2000000.00"));
+        softly.assertAll();
+    }
+
+
+    @Test
+    void 동시에_출금_요청을_보낸다() throws InterruptedException{
         // given
         User user = createUser("a", "test", "test@test.com");
         userRepository.save(user);
@@ -84,12 +122,12 @@ class AccountServiceConcurrencyTest {
         Account updatedAccount = em.find(Account.class, account.getId());
 
         SoftAssertions s = new SoftAssertions();
-        s.assertThat(updatedAccount.getBalance()).isEqualTo(BigDecimal.valueOf(0));
+        s.assertThat(updatedAccount.getBalance()).isEqualTo(new BigDecimal("0.00"));
         s.assertAll();
     }
 
     @Test
-    void 계좌_송금에_비관적_락을_사용하여_동시성_이슈를_해결한다() throws InterruptedException{
+    void 동시에_송금_요청을_보낸다() throws InterruptedException{
         // given
         User user1 = createUser("test1", "test", "test@test.com");
         User user2 = createUser("test2", "test", "test@test.com");
@@ -136,8 +174,8 @@ class AccountServiceConcurrencyTest {
         Account updatedAccount2 = em.find(Account.class, account2.getId());
 
         SoftAssertions s = new SoftAssertions();
-        s.assertThat(updatedAccount1.getBalance()).isEqualTo(BigDecimal.valueOf(30000));
-        s.assertThat(updatedAccount2.getBalance()).isEqualTo(BigDecimal.valueOf(70000));
+        s.assertThat(updatedAccount1.getBalance()).isEqualTo(new BigDecimal("30000.00"));
+        s.assertThat(updatedAccount2.getBalance()).isEqualTo(new BigDecimal("70000.00"));
         s.assertAll();
     }
 

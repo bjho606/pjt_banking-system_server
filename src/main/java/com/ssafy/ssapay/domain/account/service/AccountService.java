@@ -52,7 +52,7 @@ public class AccountService {
 
     // 계좌 잔액 확인
     public BalanceResponse checkBalance(Long accountId) {
-        Account account = accountRepository.findById(accountId)
+        Account account = accountRepository.findByIdForUpdate(accountId)
                 .orElseThrow(() -> new RuntimeException("Account not found"));
         return new BalanceResponse(account.getBalance());
     }
@@ -60,7 +60,7 @@ public class AccountService {
     // 계좌 입금
     @Transactional
     public void deposit(Long accountId, BigDecimal amount) {
-        Account account = accountRepository.findById(accountId)
+        Account account = accountRepository.findByIdForUpdate(accountId)
                 .orElseThrow(() -> new RuntimeException("Account not found"));
 
         account.addBalance(amount);
@@ -74,7 +74,7 @@ public class AccountService {
     // 계좌 출금
     @Transactional
     public void withdraw(Long accountId, BigDecimal amount) {
-        Account account = accountRepository.findById(accountId)
+        Account account = accountRepository.findByIdForUpdate(accountId)
                 .orElseThrow(() -> new RuntimeException("Account not found"));
 
         if (account.isLess(amount)) {
@@ -103,14 +103,14 @@ public class AccountService {
         Account fromAccount;
         Account toAccount;
         if (fromAccountId < toAccountId) {
-            fromAccount = accountRepository.findById(fromAccountId)
+            fromAccount = accountRepository.findByIdForUpdate(fromAccountId)
                     .orElseThrow(() -> new RuntimeException("From account not found"));
-            toAccount = accountRepository.findById(toAccountId)
+            toAccount = accountRepository.findByIdForUpdate(toAccountId)
                     .orElseThrow(() -> new RuntimeException("To account not found"));
         } else {
-            toAccount = accountRepository.findById(toAccountId)
+            toAccount = accountRepository.findByIdForUpdate(toAccountId)
                     .orElseThrow(() -> new RuntimeException("To account not found"));
-            fromAccount = accountRepository.findById(fromAccountId)
+            fromAccount = accountRepository.findByIdForUpdate(fromAccountId)
                     .orElseThrow(() -> new RuntimeException("From account not found"));
         }
 
@@ -133,7 +133,7 @@ public class AccountService {
     // 계좌 삭제
     @Transactional
     public void deleteAccount(Long accountId) {
-        Account account = accountRepository.findById(accountId)
+        Account account = accountRepository.findByIdForUpdate(accountId)
                 .orElseThrow(() -> new RuntimeException("Account not found"));
         account.delete();
 
