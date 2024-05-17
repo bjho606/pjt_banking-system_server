@@ -3,19 +3,19 @@ import http from "k6/http";
 import { sleep, check } from "k6";
 
 export const options = {
-    // vus: 100, // 가상 사용자 수
-    // duration: "10s", // 테스트 시간
-    stages: [
-        { duration: '10s', target: 100 }, // below normal load
-        { duration: '30s', target: 100 },
-        { duration: '10s', target: 200 }, // normal load
-        { duration: '30s', target: 200 },
-        { duration: '10s', target: 300 }, // around the breaking point
-        { duration: '30s', target: 300 },
-        { duration: '10s', target: 400 }, // beyond the breaking point
-        { duration: '30s', target: 400 },
-        { duration: '30s', target: 0 }, // scale down. Recovery stage.
-    ],
+    vus: 300, // 가상 사용자 수
+    duration: "10s", // 테스트 시간
+    // stages: [
+    //     { duration: '10s', target: 200 }, // below normal load
+    //     { duration: '30s', target: 200 },
+    //     { duration: '10s', target: 400 }, // normal load
+    //     { duration: '30s', target: 400 },
+    //     { duration: '10s', target: 600 }, // around the breaking point
+    //     { duration: '30s', target: 600 },
+    //     { duration: '10s', target: 800 }, // beyond the breaking point
+    //     { duration: '30s', target: 800 },
+    //     { duration: '30s', target: 0 }, // scale down. Recovery stage.
+    // ],
 
     thresholds: {
         http_req_duration: ['p(95)<100']    // 95%가 100ms 안에 응답을 받아야 함
