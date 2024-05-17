@@ -7,9 +7,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.ssafy.ssapay.domain.account.dto.response.AccountIdResponse;
 import com.ssafy.ssapay.domain.account.dto.response.BalanceResponse;
 import com.ssafy.ssapay.domain.account.entity.Account;
+import com.ssafy.ssapay.domain.account.repository.AccountRepository;
 import com.ssafy.ssapay.domain.user.entity.User;
+import com.ssafy.ssapay.domain.user.repository.UserRepository;
 import jakarta.persistence.EntityManager;
 import java.math.BigDecimal;
+
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.DisplayNameGeneration;
@@ -28,11 +31,15 @@ import org.springframework.transaction.annotation.Transactional;
 class AccountServiceTest {
     private final AccountService accountService;
     private final EntityManager em;
+    private final AccountRepository accountRepository;
+    private final UserRepository userRepository;
 
     @Autowired
-    public AccountServiceTest(AccountService accountService, EntityManager em) {
+    public AccountServiceTest(AccountService accountService, EntityManager em, AccountRepository accountRepository, UserRepository userRepository) {
         this.accountService = accountService;
         this.em = em;
+        this.accountRepository = accountRepository;
+        this.userRepository = userRepository;
     }
 
     @Test
@@ -146,4 +153,5 @@ class AccountServiceTest {
         // then
         assertTrue(account.isDeleted());
     }
+
 }
