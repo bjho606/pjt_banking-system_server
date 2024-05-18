@@ -1,0 +1,7 @@
+db:
+  host: localhost
+  port: 3306
+  database: ssapay
+
+image:
+  upload-locations: classpath:/static/images/
