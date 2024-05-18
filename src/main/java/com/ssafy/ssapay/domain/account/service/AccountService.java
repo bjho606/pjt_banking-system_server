@@ -8,11 +8,9 @@ import com.ssafy.ssapay.domain.payment.entity.PaymentRecord;
 import com.ssafy.ssapay.domain.payment.repository.PaymentRecordRepository;
 import com.ssafy.ssapay.domain.user.entity.User;
 import com.ssafy.ssapay.domain.user.repository.UserRepository;
+import com.ssafy.ssapay.global.error.type.BadRequestException;
 import java.math.BigDecimal;
 import java.util.Random;
-
-import com.ssafy.ssapay.global.aop.OptimisticRetry;
-import com.ssafy.ssapay.global.aop.PessimisticRetry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -30,7 +28,7 @@ public class AccountService {
     @Transactional
     public AccountIdResponse createAccount(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new BadRequestException("User not found"));
 
         // 8자리 계좌번호 생성
         Random random = new Random();
@@ -52,8 +50,8 @@ public class AccountService {
 
     // 계좌 잔액 확인
     public BalanceResponse checkBalance(Long accountId) {
-        Account account = accountRepository.findByIdForUpdate(accountId)
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new BadRequestException("Account not found"));
         return new BalanceResponse(account.getBalance());
     }
 
@@ -61,7 +59,7 @@ public class AccountService {
     @Transactional
     public void deposit(Long accountId, BigDecimal amount) {
         Account account = accountRepository.findByIdForUpdate(accountId)
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+                .orElseThrow(() -> new BadRequestException("Account not found"));
 
         account.addBalance(amount);
 
@@ -75,10 +73,10 @@ public class AccountService {
     @Transactional
     public void withdraw(Long accountId, BigDecimal amount) {
         Account account = accountRepository.findByIdForUpdate(accountId)
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+                .orElseThrow(() -> new BadRequestException("Account not found"));
 
         if (account.isLess(amount)) {
-            throw new RuntimeException("잔액 부족");
+            throw new BadRequestException("잔액 부족");
         }
 
         account.substractBalance(amount);
@@ -104,18 +102,18 @@ public class AccountService {
         Account toAccount;
         if (fromAccountId < toAccountId) {
             fromAccount = accountRepository.findByIdForUpdate(fromAccountId)
-                    .orElseThrow(() -> new RuntimeException("From account not found"));
+                    .orElseThrow(() -> new BadRequestException("From account not found"));
             toAccount = accountRepository.findByIdForUpdate(toAccountId)
-                    .orElseThrow(() -> new RuntimeException("To account not found"));
+                    .orElseThrow(() -> new BadRequestException("To account not found"));
         } else {
             toAccount = accountRepository.findByIdForUpdate(toAccountId)
-                    .orElseThrow(() -> new RuntimeException("To account not found"));
+                    .orElseThrow(() -> new BadRequestException("To account not found"));
             fromAccount = accountRepository.findByIdForUpdate(fromAccountId)
-                    .orElseThrow(() -> new RuntimeException("From account not found"));
+                    .orElseThrow(() -> new BadRequestException("From account not found"));
         }
 
         if (fromAccount.isLess(amount)) {
-            throw new RuntimeException("잔액 부족");
+            throw new BadRequestException("잔액 부족");
         }
 
         fromAccount.substractBalance(amount);
@@ -134,7 +132,7 @@ public class AccountService {
     @Transactional
     public void deleteAccount(Long accountId) {
         Account account = accountRepository.findByIdForUpdate(accountId)
-                .orElseThrow(() -> new RuntimeException("Account not found"));
+                .orElseThrow(() -> new BadRequestException("Account not found"));
         account.delete();
 
         log.debug("delete {} to {} {}", accountId);
