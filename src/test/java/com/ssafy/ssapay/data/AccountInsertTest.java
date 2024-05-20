@@ -1,32 +1,26 @@
 package com.ssafy.ssapay.data;
 
 import com.ssafy.ssapay.domain.account.entity.Account;
-import com.ssafy.ssapay.domain.account.repository.AccountRepository;
 import com.ssafy.ssapay.domain.user.entity.User;
-import com.ssafy.ssapay.domain.user.repository.UserRepository;
-import jakarta.persistence.EntityManager;
+import com.ssafy.ssapay.infra.repository.read.AccountReadRepository;
+import com.ssafy.ssapay.infra.repository.read.UserReadRepository;
 import java.util.ArrayList;
 import java.util.List;
-import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-public class AccountInsertTest {
-    private final EntityManager em;
-    private final AccountRepository accountRepository;
-    private final UserRepository userRepository;
+//@SpringBootTest
+class AccountInsertTest {
+    private final AccountReadRepository accountReadRepository;
+    private final UserReadRepository userRepository;
 
     @Autowired
-    public AccountInsertTest(EntityManager em,
-                             AccountRepository accountRepository,
-                             UserRepository userRepository) {
-        this.em = em;
-        this.accountRepository = accountRepository;
+    public AccountInsertTest(AccountReadRepository accountReadRepository,
+                             UserReadRepository userRepository) {
+        this.accountReadRepository = accountReadRepository;
         this.userRepository = userRepository;
     }
 
-    @Test
+    //    @Test
     void test() {
         //given
         List<User> users = userRepository.findAll();
@@ -45,6 +39,6 @@ public class AccountInsertTest {
                 accounts.add(new Account(user, "USER" + i + "ACCOUNT" + j));
             }
         }
-        accountRepository.saveAll(accounts);
+        accountReadRepository.saveAll(accounts);
     }
 }

@@ -1,13 +1,19 @@
 package com.ssafy.ssapay.domain.account.service;
 
-import com.ssafy.ssapay.domain.account.dto.response.AccountIdResponse;
-import com.ssafy.ssapay.domain.account.dto.response.BalanceResponse;
+import static com.ssafy.ssapay.util.Fixture.createUser;
+
+import com.ssafy.ssapay.config.TestConfig;
 import com.ssafy.ssapay.domain.account.entity.Account;
-import com.ssafy.ssapay.domain.account.repository.AccountRepository;
 import com.ssafy.ssapay.domain.user.entity.User;
-import com.ssafy.ssapay.domain.user.repository.UserRepository;
+import com.ssafy.ssapay.util.TestTransactionService;
 import jakarta.persistence.EntityManager;
+import java.math.BigDecimal;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.assertj.core.api.SoftAssertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
@@ -15,33 +21,30 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 
-import java.math.BigDecimal;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static com.ssafy.ssapay.util.Fixture.createUser;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-@DisplayName("계좌 기본 CRUD 테스트")
+@DisplayName("계좌 동시성 테스트")
 @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @SpringBootTest
+@Import(TestConfig.class)
 class AccountServiceConcurrencyTest {
     private final AccountService accountService;
     private final EntityManager em;
-    private final AccountRepository accountRepository;
-    private final UserRepository userRepository;
+    private final TestTransactionService testTransactionService;
 
     @Autowired
-    public AccountServiceConcurrencyTest(AccountService accountService, EntityManager em, AccountRepository accountRepository, UserRepository userRepository) {
+    public AccountServiceConcurrencyTest(AccountService accountService,
+                                         EntityManager em,
+                                         TestTransactionService testTransactionService) {
         this.accountService = accountService;
         this.em = em;
-        this.accountRepository = accountRepository;
-        this.userRepository = userRepository;
+        this.testTransactionService = testTransactionService;
+    }
+
+    @BeforeEach
+    void setUp() {
+        testTransactionService.truncateTables();
     }
 
     @Test
@@ -49,8 +52,7 @@ class AccountServiceConcurrencyTest {
         int totalCount = 200;
         User user = createUser("user", "user", "user@email.com");
         Account account = new Account(user, String.valueOf(user.getId()));
-        userRepository.save(user);
-        accountRepository.save(account);
+        testTransactionService.persist(user, account);
         //when
         ExecutorService executorService = Executors.newFixedThreadPool(20);
         CountDownLatch countDownLatch = new CountDownLatch(totalCount);
@@ -86,12 +88,9 @@ class AccountServiceConcurrencyTest {
     void 동시에_출금_요청을_보낸다() throws InterruptedException{
         // given
         User user = createUser("a", "test", "test@test.com");
-        userRepository.save(user);
-
         Account account = new Account(user, "11111110");
         account.addBalance(new BigDecimal(10000));
-        accountRepository.save(account);
-
+        testTransactionService.persist(user, account);
         // when
         int cnt = 200;
         BigDecimal useBalance = new BigDecimal(100);
@@ -117,7 +116,6 @@ class AccountServiceConcurrencyTest {
         countDownLatch.await();
         System.out.println("successCount = " + successCount);
         System.out.println("failCount = " + failCount);
-
         // then
         Account updatedAccount = em.find(Account.class, account.getId());
 
@@ -131,15 +129,11 @@ class AccountServiceConcurrencyTest {
         // given
         User user1 = createUser("test1", "test", "test@test.com");
         User user2 = createUser("test2", "test", "test@test.com");
-        userRepository.save(user1);
-        userRepository.save(user2);
-
         Account account1 = new Account(user1, "11111110");
         account1.addBalance(new BigDecimal(50000));
         Account account2 = new Account(user2, "11111111");
         account2.addBalance(new BigDecimal(50000));
-        accountRepository.save(account1);
-        accountRepository.save(account2);
+        testTransactionService.persist(user1, user2, account1, account2);
 
         // when
         int cnt = 200;
@@ -178,5 +172,4 @@ class AccountServiceConcurrencyTest {
         s.assertThat(updatedAccount2.getBalance()).isEqualTo(new BigDecimal("70000.00"));
         s.assertAll();
     }
-
 }

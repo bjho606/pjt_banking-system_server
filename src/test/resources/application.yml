@@ -2,20 +2,35 @@ spring:
   config:
     import: classpath:privacy.yml
   datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${db.host}:${db.port}/${db.database}?useSSL=false&useUnicode=true&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
-    username: ${db.username}
-    password: ${db.password}
+    master:
+      url: jdbc:mysql://${master.host}:${master.port}/${master.database}?useSSL=false&useUnicode=true&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
+      username: ${master.username}
+      password: ${master.password}
+      driver: com.mysql.cj.jdbc.Driver
+    slave:
+      url: jdbc:mysql://${slave.host}:${slave.port}/${slave.database}?useSSL=false&useUnicode=true&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
+      username: ${slave.username}
+      password: ${slave.password}
+      driver: com.mysql.cj.jdbc.Driver
   jpa:
     open-in-view: false
     database: mysql
     hibernate:
       ddl-auto: create
     defer-datasource-initialization: true
-    show-sql: true
     properties:
       hibernate:
+        show-sql: true
         dialect: org.hibernate.dialect.MySQLDialect
   sql:
     init:
       mode: always
+
+logging:
+  file:
+    path: ${user.dir}/log
+    name: ${user.dir}/log/test
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{traceId}] %highlight(%-5level) %cyan(%logger{36}.%M) - %msg%n"
+  level:
+    root: debug
