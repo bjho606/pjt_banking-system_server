@@ -1,9 +1,6 @@
 package com.ssafy.ssapay.domain.account.service;
 
-import com.ssafy.ssapay.domain.account.dto.response.AccountIdResponse;
-import com.ssafy.ssapay.domain.account.dto.response.AccountResponse;
-import com.ssafy.ssapay.domain.account.dto.response.AllAccountsResponse;
-import com.ssafy.ssapay.domain.account.dto.response.BalanceResponse;
+import com.ssafy.ssapay.domain.account.dto.response.*;
 import com.ssafy.ssapay.domain.account.entity.Account;
 import com.ssafy.ssapay.domain.account.repository.AccountRepository;
 import com.ssafy.ssapay.domain.payment.entity.PaymentRecord;
@@ -12,11 +9,16 @@ import com.ssafy.ssapay.domain.user.entity.User;
 import com.ssafy.ssapay.domain.user.repository.UserRepository;
 import com.ssafy.ssapay.global.error.type.BadRequestException;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Random;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.convert.Jsr310Converters;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -142,6 +144,7 @@ public class AccountService {
         log.debug("delete {} to {} {}", accountId);
     }
 
+    // 유저의 전체 계좌 조회
     public AllAccountsResponse checkAllAccounts(Long userId) {
         List<Account> accounts = accountRepository.findAllAccountByUserId(userId);
         List<AccountResponse> accountInfos = accounts.stream()
@@ -151,5 +154,18 @@ public class AccountService {
         return new AllAccountsResponse(accountInfos);
     }
 
+    // 계좌 잔액 기간별 확인
+    public RecordsInPeriodResponse checkPaymentRecordByPeriod(Long accountId, LocalDate startDate, LocalDate endDate) {
+//        System.out.println(startDate);
+        LocalDateTime start = startDate.atStartOfDay();
+        LocalDateTime end = endDate.atTime(LocalTime.MAX);
+//        System.out.println(start);
+        List<PaymentRecord> records = accountRepository.findByIdAndPeriod(accountId, start, end);
+        List<PaymentRecordResponse> recordInfos = records.stream()
+                .map(PaymentRecordResponse::from)
+                .toList();
+
+        return new RecordsInPeriodResponse(recordInfos);
+    }
 
 }

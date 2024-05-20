@@ -3,6 +3,7 @@ package com.ssafy.ssapay.domain.account.controller;
 import com.ssafy.ssapay.domain.account.dto.request.*;
 import com.ssafy.ssapay.domain.account.dto.response.AccountIdResponse;
 import com.ssafy.ssapay.domain.account.dto.response.BalanceResponse;
+import com.ssafy.ssapay.domain.account.dto.response.RecordsInPeriodResponse;
 import com.ssafy.ssapay.domain.account.service.AccountService;
 import com.ssafy.ssapay.domain.account.dto.request.CheckAllAccountsRequest;
 import com.ssafy.ssapay.domain.account.dto.response.AllAccountsResponse;
@@ -56,6 +57,11 @@ public class AccountController {
     @GetMapping("/accountInfos")
     public AllAccountsResponse checkAllAccounts(@RequestBody CheckAllAccountsRequest request) {
         return accountService.checkAllAccounts(request.userId());
+    }
+
+    @GetMapping("/recordByPeriod")
+    public RecordsInPeriodResponse checkPaymentRecordByPeriod(@RequestBody checkPaymentRecordByPeriod request) {
+        return accountService.checkPaymentRecordByPeriod(request.accountId(), request.startDate(), request.endDate());
     }
 
 }
