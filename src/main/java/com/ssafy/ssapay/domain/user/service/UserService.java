@@ -1,6 +1,5 @@
 package com.ssafy.ssapay.domain.user.service;
 
-import com.ssafy.ssapay.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -9,6 +8,6 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 @Slf4j
 public class UserService {
-    private final UserRepository userRepository;
+//    private final UserRepository userRepository;
 
 }
