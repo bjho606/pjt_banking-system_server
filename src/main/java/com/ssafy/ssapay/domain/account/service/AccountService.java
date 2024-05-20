@@ -1,6 +1,8 @@
 package com.ssafy.ssapay.domain.account.service;
 
 import com.ssafy.ssapay.domain.account.dto.response.AccountIdResponse;
+import com.ssafy.ssapay.domain.account.dto.response.AccountResponse;
+import com.ssafy.ssapay.domain.account.dto.response.AllAccountsResponse;
 import com.ssafy.ssapay.domain.account.dto.response.BalanceResponse;
 import com.ssafy.ssapay.domain.account.entity.Account;
 import com.ssafy.ssapay.domain.account.repository.AccountRepository;
@@ -10,7 +12,9 @@ import com.ssafy.ssapay.domain.user.entity.User;
 import com.ssafy.ssapay.domain.user.repository.UserRepository;
 import com.ssafy.ssapay.global.error.type.BadRequestException;
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Random;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -137,4 +141,15 @@ public class AccountService {
 
         log.debug("delete {} to {} {}", accountId);
     }
+
+    public AllAccountsResponse checkAllAccounts(Long userId) {
+        List<Account> accounts = accountRepository.findAllAccountByUserId(userId);
+        List<AccountResponse> accountInfos = accounts.stream()
+                .map(AccountResponse::from)
+                .toList();
+
+        return new AllAccountsResponse(accountInfos);
+    }
+
+
 }

@@ -1,6 +1,8 @@
 package com.ssafy.ssapay.domain.account.repository;
 
 import com.ssafy.ssapay.domain.account.entity.Account;
+
+import java.util.List;
 import java.util.Optional;
 
 import jakarta.persistence.LockModeType;
@@ -21,4 +23,10 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
             SELECT a FROM Account a WHERE a.id = :id and a.isDeleted = false
             """)
     Optional<Account> findByIdForUpdate(@Param("id") Long id);
+
+    @Query("""
+            SELECT a FROM Account a WHERE a.user.id = :userId and a.isDeleted = false
+            """)
+    List<Account> findAllAccountByUserId(@Param("userId") Long userId);
+
 }
