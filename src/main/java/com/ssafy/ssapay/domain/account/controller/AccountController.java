@@ -1,14 +1,12 @@
 package com.ssafy.ssapay.domain.account.controller;
 
-import com.ssafy.ssapay.domain.account.dto.request.AccountCreateRequest;
-import com.ssafy.ssapay.domain.account.dto.request.AccountDeleteRequest;
-import com.ssafy.ssapay.domain.account.dto.request.CheckBalanceRequest;
-import com.ssafy.ssapay.domain.account.dto.request.DepositRequest;
-import com.ssafy.ssapay.domain.account.dto.request.TransferRequest;
-import com.ssafy.ssapay.domain.account.dto.request.WithdrawRequest;
+import com.ssafy.ssapay.domain.account.dto.request.*;
 import com.ssafy.ssapay.domain.account.dto.response.AccountIdResponse;
 import com.ssafy.ssapay.domain.account.dto.response.BalanceResponse;
+import com.ssafy.ssapay.domain.account.dto.response.RecordsInPeriodResponse;
 import com.ssafy.ssapay.domain.account.service.AccountService;
+import com.ssafy.ssapay.domain.account.dto.request.CheckAllAccountsRequest;
+import com.ssafy.ssapay.domain.account.dto.response.AllAccountsResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -55,4 +53,15 @@ public class AccountController {
     public void deleteAccount(@RequestBody AccountDeleteRequest request) {
         accountService.deleteAccount(request.accountId());
     }
+
+    @GetMapping("/accountInfos")
+    public AllAccountsResponse checkAllAccounts(@RequestBody CheckAllAccountsRequest request) {
+        return accountService.checkAllAccounts(request.userId());
+    }
+
+    @GetMapping("/recordByPeriod")
+    public RecordsInPeriodResponse checkPaymentRecordByPeriod(@RequestBody checkPaymentRecordByPeriod request) {
+        return accountService.checkPaymentRecordByPeriod(request.accountId(), request.startDate(), request.endDate());
+    }
+
 }

@@ -49,3 +49,22 @@ Content-Type: application/json
 {
   "accountId": 72
 }
+
+
+### 유저의 전체 계좌정보 조회
+GET http://localhost:8080/api/v1/account/accountInfos
+Content-Type: application/json
+
+{
+  "userId": 67
+}
+
+### 계좌의 기간별 거래내역 조회
+GET http://localhost:8080/api/v1/account/recordByPeriod
+Content-Type: application/json
+
+{
+  "accountId": 73,
+  "startDate": "2024-05-16",
+  "endDate": "2024-05-17"
+}
