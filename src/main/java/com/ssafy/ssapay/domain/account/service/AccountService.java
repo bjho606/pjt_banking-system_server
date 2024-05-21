@@ -1,15 +1,16 @@
 package com.ssafy.ssapay.domain.account.service;
 
-import com.ssafy.ssapay.domain.account.dto.response.accountNumberResponse;
 import com.ssafy.ssapay.domain.account.dto.response.AccountResponse;
 import com.ssafy.ssapay.domain.account.dto.response.AllAccountsResponse;
 import com.ssafy.ssapay.domain.account.dto.response.BalanceResponse;
 import com.ssafy.ssapay.domain.account.dto.response.PaymentRecordResponse;
 import com.ssafy.ssapay.domain.account.dto.response.RecordsInPeriodResponse;
+import com.ssafy.ssapay.domain.account.dto.response.accountNumberResponse;
 import com.ssafy.ssapay.domain.account.entity.Account;
 import com.ssafy.ssapay.domain.payment.entity.PaymentRecord;
 import com.ssafy.ssapay.domain.user.entity.User;
 import com.ssafy.ssapay.global.error.type.BadRequestException;
+import com.ssafy.ssapay.infra.payment.PaymentClient;
 import com.ssafy.ssapay.infra.repository.read.AccountReadRepository;
 import com.ssafy.ssapay.infra.repository.write.AccountWriteRepository;
 import com.ssafy.ssapay.infra.repository.write.PaymentRecordWriteRepository;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.Random;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +37,11 @@ public class AccountService {
     private final UserWriteRepository userWriteRepository;
     private final AccountWriteRepository accountWriteRepository;
     private final PaymentRecordWriteRepository paymentRecordWriteRepository;
+
+    private final PaymentClient paymentClient;
+
+    @Value("${account.number.prefix}")
+    private String ACCOUNT_NUMBER_PREFIX;
 
     // 계좌 생성
     @Transactional
@@ -75,7 +82,7 @@ public class AccountService {
 
         account.addBalance(amount);
 
-        PaymentRecord paymentRecord = new PaymentRecord(account, amount);
+        PaymentRecord paymentRecord = new PaymentRecord(account.getAccountNumber(), amount);
         paymentRecordWriteRepository.save(paymentRecord);
 
         log.debug("deposit {} {}", accountNumber, amount);
@@ -93,7 +100,7 @@ public class AccountService {
 
         account.substractBalance(amount);
 
-        PaymentRecord paymentRecord = new PaymentRecord(account, amount.negate());
+        PaymentRecord paymentRecord = new PaymentRecord(account.getAccountNumber(), amount.negate());
         paymentRecordWriteRepository.save(paymentRecord);
 
         log.debug("withdraw {} {}", accountNumber, amount);
@@ -102,10 +109,18 @@ public class AccountService {
     // 계좌 송금
     @Transactional
     public void transfer(String fromAccountNumber, String toAccountNumber, BigDecimal amount) {
+        if (toAccountNumber.startsWith(ACCOUNT_NUMBER_PREFIX)) {
+            processWithInnerSystem(fromAccountNumber, toAccountNumber, amount);
+        } else {
+            processWithOuterSystem(fromAccountNumber, toAccountNumber, amount);
+        }
+    }
+
+    private void processWithInnerSystem(String fromAccountNumber, String toAccountNumber, BigDecimal amount) {
         Account fromAccount;
         Account toAccount;
 
-        if (fromAccountNumber.compareTo(toAccountNumber)>0) {
+        if (fromAccountNumber.compareTo(toAccountNumber) > 0) {
             fromAccount = accountWriteRepository.findByAccountNumberForUpdate(fromAccountNumber)
                     .orElseThrow(() -> new BadRequestException("From account not found"));
             toAccount = accountWriteRepository.findByAccountNumberForUpdate(toAccountNumber)
@@ -127,10 +142,35 @@ public class AccountService {
         accountWriteRepository.save(fromAccount);
         accountWriteRepository.save(toAccount);
 
-        PaymentRecord paymentRecord = new PaymentRecord(fromAccount, toAccount, amount);
+        PaymentRecord paymentRecord = new PaymentRecord(fromAccount.getAccountNumber(), toAccount.getAccountNumber(),
+                amount);
         paymentRecordWriteRepository.save(paymentRecord);
 
         log.debug("transfer {} to {} {}", fromAccountNumber, toAccountNumber, amount);
+    }
+
+    private void processWithOuterSystem(String fromAccountNumber, String toAccountNumber, BigDecimal amount) {
+        Account fromAccount = accountWriteRepository.findByAccountNumberForUpdate(fromAccountNumber)
+                .orElseThrow(() -> new BadRequestException("From account not found"));
+
+        fromAccount.substractBalance(amount);
+        PaymentRecord paymentRecord = new PaymentRecord(fromAccount.getAccountNumber(), amount.negate());
+        paymentRecordWriteRepository.save(paymentRecord);
+        paymentClient.requestTransfer(fromAccountNumber, toAccountNumber, amount);
+    }
+
+    //다른 서비스에서 송금 요청
+    @Transactional
+    public void transferExternal(String fromAccountNumber, String toAccountNumber, BigDecimal amount) {
+        Account account = accountWriteRepository.findByAccountNumberForUpdate(toAccountNumber)
+                .orElseThrow(() -> new BadRequestException("Account not found"));
+
+        account.addBalance(amount);
+
+        PaymentRecord paymentRecord = new PaymentRecord(fromAccountNumber, account.getAccountNumber(), amount);
+        paymentRecordWriteRepository.save(paymentRecord);
+
+        log.debug("deposit {} {}", toAccountNumber, amount);
     }
 
     // 계좌 삭제
@@ -154,11 +194,10 @@ public class AccountService {
     }
 
     // 계좌 잔액 기간별 확인
-    public RecordsInPeriodResponse checkPaymentRecordByPeriod(String accountNumber, LocalDate startDate, LocalDate endDate) {
-//        System.out.println(startDate);
+    public RecordsInPeriodResponse checkPaymentRecordByPeriod(String accountNumber, LocalDate startDate,
+                                                              LocalDate endDate) {
         LocalDateTime start = startDate.atStartOfDay();
         LocalDateTime end = endDate.atTime(LocalTime.MAX);
-//        System.out.println(start);
         List<PaymentRecord> records = accountReadRepository.findByAccountNumberAndPeriod(accountNumber, start, end);
         List<PaymentRecordResponse> recordInfos = records.stream()
                 .map(PaymentRecordResponse::from)
@@ -166,5 +205,4 @@ public class AccountService {
 
         return new RecordsInPeriodResponse(recordInfos);
     }
-
 }

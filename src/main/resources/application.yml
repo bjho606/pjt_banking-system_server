@@ -30,3 +30,12 @@ jwt:
   access-token-duration: 1800000
   refresh-token-duration: 86400000
   secret: 1234554321sdfasjfdhasjkerqwioeu42uihrfjskablasdfljkshalfksdf2342rsdvasdfgqeerfswdfasfasdfq3453sdd
+
+account:
+  number:
+    prefix: mj
+
+external:
+  transfer:
+    url: http://192.168.169.42:8080/api/v1/account/transfer/external
+

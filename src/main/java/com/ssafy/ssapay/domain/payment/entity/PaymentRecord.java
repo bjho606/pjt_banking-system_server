@@ -1,13 +1,10 @@
 package com.ssafy.ssapay.domain.payment.entity;
 
-import com.ssafy.ssapay.domain.account.entity.Account;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -26,13 +23,9 @@ public class PaymentRecord {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "from_account_number")
-    private Account fromAccount;
+    private String fromAccountNumber;
 
-    @ManyToOne
-    @JoinColumn(name = "to_account_number")
-    private Account toAccount;
+    private String toAccountNumber;
 
     @Column(nullable = false)
     private BigDecimal amount;
@@ -54,14 +47,14 @@ public class PaymentRecord {
         updatedAt = LocalDateTime.now();
     }
 
-    public PaymentRecord(Account toAccount, BigDecimal amount) {
-        this.toAccount = toAccount;
+    public PaymentRecord(String toAccountNumber, BigDecimal amount) {
+        this.toAccountNumber = toAccountNumber;
         this.amount = amount;
     }
 
-    public PaymentRecord(Account fromAccount, Account toAccount, BigDecimal amount) {
-        this.fromAccount = fromAccount;
-        this.toAccount = toAccount;
+    public PaymentRecord(String fromAccountNumber, String toAccountNumber, BigDecimal amount) {
+        this.fromAccountNumber = fromAccountNumber;
+        this.toAccountNumber = toAccountNumber;
         this.amount = amount;
     }
 }

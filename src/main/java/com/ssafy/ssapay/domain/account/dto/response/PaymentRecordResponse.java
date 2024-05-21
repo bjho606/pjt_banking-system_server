@@ -1,11 +1,9 @@
 package com.ssafy.ssapay.domain.account.dto.response;
 
-import com.ssafy.ssapay.domain.account.entity.Account;
 import com.ssafy.ssapay.domain.payment.entity.PaymentRecord;
-import lombok.Getter;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import lombok.Getter;
 
 @Getter
 public class PaymentRecordResponse {
@@ -22,11 +20,12 @@ public class PaymentRecordResponse {
     }
 
     public static PaymentRecordResponse from(PaymentRecord paymentRecord) {
-        String fromAccountNumber = (paymentRecord.getFromAccount() != null) ? paymentRecord.getFromAccount().getAccountNumber() : null;
+        String fromAccountNumber =
+                (paymentRecord.getFromAccountNumber() != null) ? paymentRecord.getFromAccountNumber() : null;
 
         return new PaymentRecordResponse(
                 fromAccountNumber,
-                paymentRecord.getToAccount().getAccountNumber(),
+                paymentRecord.getToAccountNumber(),
                 paymentRecord.getAmount(),
                 paymentRecord.getCreatedAt());
     }

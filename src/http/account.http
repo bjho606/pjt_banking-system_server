@@ -3,7 +3,7 @@ POST http://localhost:8080/api/v1/account
 Content-Type: application/json
 
 {
-  "userId": 68
+  "userId": 1
 }
 
 ### 계좌 잔액 조회
@@ -11,7 +11,7 @@ GET http://localhost:8080/api/v1/account/balance
 Content-Type: application/json
 
 {
-  "accountNumber": 72
+  "accountNumber": "30255492"
 }
 
 ### 계좌 입금
@@ -19,7 +19,7 @@ POST http://localhost:8080/api/v1/account/deposit
 Content-Type: application/json
 
 {
-  "accountNumber": 73,
+  "accountNumber": "mj82227053",
   "amount": 1000
 }
 
@@ -28,7 +28,7 @@ POST http://localhost:8080/api/v1/account/withdraw
 Content-Type: application/json
 
 {
-  "accountNumber": 72,
+  "accountNumber": 30255492,
   "amount": 1000
 }
 
@@ -37,9 +37,9 @@ POST http://localhost:8080/api/v1/account/transfer
 Content-Type: application/json
 
 {
-  "fromaccountNumber": 73,
-  "toaccountNumber": 72,
-  "amount": 1000
+  "fromAccountNumber": "mj82227053",
+  "toAccountNumber": "jh-USER0ACCOUNT0",
+  "amount": 500
 }
 
 ### 계좌 삭제
@@ -56,7 +56,7 @@ GET http://localhost:8080/api/v1/account/accountInfos
 Content-Type: application/json
 
 {
-  "userId": 67
+  "userId": 1
 }
 
 ### 계좌의 기간별 거래내역 조회
@@ -64,7 +64,7 @@ GET http://localhost:8080/api/v1/account/recordByPeriod
 Content-Type: application/json
 
 {
-  "accountNumber": 73,
-  "startDate": "2024-05-16",
-  "endDate": "2024-05-17"
+  "accountNumber": 77960076,
+  "startDate": "2024-01-01",
+  "endDate": "2024-05-31"
 }
