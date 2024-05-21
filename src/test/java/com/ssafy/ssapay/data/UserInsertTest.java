@@ -5,9 +5,12 @@ import static com.ssafy.ssapay.util.Fixture.createUser;
 import com.ssafy.ssapay.domain.user.entity.User;
 import com.ssafy.ssapay.infra.repository.write.UserWriteRepository;
 import java.util.ArrayList;
-import org.springframework.beans.factory.annotation.Autowired;
 
-//@SpringBootTest
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+
+@SpringBootTest
 public class UserInsertTest {
     private final UserWriteRepository userWriteRepository;
 
@@ -16,7 +19,7 @@ public class UserInsertTest {
         this.userWriteRepository = userRepository;
     }
 
-    //    @Test
+    @Test
     void test() {
         //given
         for (int i = 0; i < 100000; i += 10000) {
@@ -28,7 +31,7 @@ public class UserInsertTest {
     private void insert10000Users(int start) {
         ArrayList<User> users = new ArrayList<>();
         for (int i = start; i < start + 10000; ++i) {
-            users.add(createUser("user" + start, "user" + start, "user" + start + "@test.com"));
+            users.add(createUser("user" + i, "user" + i, "user" + i + "@test.com"));
         }
         userWriteRepository.saveAll(users);
     }

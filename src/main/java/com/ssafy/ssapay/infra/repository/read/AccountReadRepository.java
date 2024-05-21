@@ -11,12 +11,12 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 @Transactional(readOnly = true)
-public interface AccountReadRepository extends JpaRepository<Account, Long> {
+public interface AccountReadRepository extends JpaRepository<Account, String> {
 
     @Query("""
-            SELECT a FROM Account a WHERE a.id = :id and a.isDeleted = false
+            SELECT a FROM Account a WHERE a.accountNumber = :accountNumber and a.isDeleted = false
             """)
-    Optional<Account> findById(@Param("id") Long id);
+    Optional<Account> findByAccountNumber(@Param("accountNumber") String accountNumber);
 
     @Query("""
             SELECT a FROM Account a WHERE a.user.id = :userId and a.isDeleted = false
@@ -25,7 +25,9 @@ public interface AccountReadRepository extends JpaRepository<Account, Long> {
 
     @Query("""
             SELECT r FROM PaymentRecord r WHERE (r.createdAt BETWEEN :start AND :end)
-            AND (r.fromAccount.id=:id OR r.toAccount.id=:id) 
+            AND (r.fromAccountNumber=:accountNumber OR r.toAccountNumber=:accountNumber) 
             """)
-    List<PaymentRecord> findByIdAndPeriod(@Param("id") Long id, @Param("start") LocalDateTime start, @Param("end")LocalDateTime end);
+    List<PaymentRecord> findByAccountNumberAndPeriod(@Param("accountNumber") String accountNumber,
+                                                     @Param("start") LocalDateTime start,
+                                                     @Param("end") LocalDateTime end);
 }

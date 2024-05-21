@@ -42,10 +42,10 @@ function getRandomValue(min, max) {
 }
 
 function checkBalanceApi() {
-    const randomAccountId = getRandomValue(125, 1000124);
+    const randomaccountNumber = getRandomValue(125, 1000124);
     const url = 'http://localhost:8080/api/v1/account/balance';
     const payload = JSON.stringify({
-        accountId: randomAccountId,
+        accountNumber: randomaccountNumber,
     });
     const params = {
         headers: {
@@ -61,10 +61,10 @@ function checkBalanceApi() {
 }
 
 function depositApi() {
-    const randomAccountId = getRandomValue(125, 1000124);
+    const randomaccountNumber = getRandomValue(125, 1000124);
     const url = 'http://localhost:8080/api/v1/account/deposit';
     const payload = JSON.stringify({
-        accountId: randomAccountId,
+        accountNumber: randomaccountNumber,
         amount: 2000,
     });
     const params = {
@@ -81,10 +81,10 @@ function depositApi() {
 }
 
 function withdrawApi() {
-    const randomAccountId = getRandomValue(125, 1000124);
+    const randomaccountNumber = getRandomValue(125, 1000124);
     const url = 'http://localhost:8080/api/v1/account/withdraw';
     const payload = JSON.stringify({
-        accountId: randomAccountId,
+        accountNumber: randomaccountNumber,
         amount: 1000,
     });
     const params = {
@@ -101,12 +101,12 @@ function withdrawApi() {
 }
 
 function transferApi() {
-    const randomFromAccountId = getRandomValue(125, 1000124);
-    const randomToAccountId = getRandomValue(125, 1000124);
+    const randomFromaccountNumber = getRandomValue(125, 1000124);
+    const randomToaccountNumber = getRandomValue(125, 1000124);
     const url = 'http://localhost:8080/api/v1/account/transfer';
     const payload = JSON.stringify({
-        fromAccountId: randomFromAccountId,
-        toAccountId: randomToAccountId,
+        fromaccountNumber: randomFromaccountNumber,
+        toaccountNumber: randomToaccountNumber,
         amount: 1500,
     });
     const params = {

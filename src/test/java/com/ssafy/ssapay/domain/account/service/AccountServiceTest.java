@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.ssafy.ssapay.config.TestConfig;
-import com.ssafy.ssapay.domain.account.dto.response.AccountIdResponse;
+import com.ssafy.ssapay.domain.account.dto.response.accountNumberResponse;
 import com.ssafy.ssapay.domain.account.dto.response.BalanceResponse;
 import com.ssafy.ssapay.domain.account.entity.Account;
 import com.ssafy.ssapay.domain.user.entity.User;
@@ -53,10 +53,10 @@ class AccountServiceTest {
         testService.persist(user);
         Long userId = user.getId();
         // when
-        AccountIdResponse response = accountService.createAccount(userId);
+        accountNumberResponse response = accountService.createAccount(userId);
         // then
-        Long accountId = response.accountId();
-        Account account = em.find(Account.class, accountId);
+        String accountNumber = response.accountNumber();
+        Account account = em.find(Account.class, accountNumber);
 
         SoftAssertions s = new SoftAssertions();
         s.assertThat(account).isNotNull();
@@ -72,7 +72,7 @@ class AccountServiceTest {
         account.addBalance(new BigDecimal(10000));
         testService.persist(user, account);
         // when
-        BalanceResponse response = accountService.checkBalance(account.getId());
+        BalanceResponse response = accountService.checkBalance(account.getAccountNumber());
         // then
         BigDecimal balance = response.balance();
         BigDecimal expected = new BigDecimal(10000);
@@ -90,9 +90,9 @@ class AccountServiceTest {
         Account account = new Account(user, "11111111");
         testService.persist(user, account);
         // when
-        accountService.deposit(account.getId(), new BigDecimal(10000));
+        accountService.deposit(account.getAccountNumber(), new BigDecimal(10000));
         // then
-        Account result = em.find(Account.class, account.getId());
+        Account result = em.find(Account.class, account.getAccountNumber());
         BigDecimal expected = new BigDecimal(10000);
 
         SoftAssertions s = new SoftAssertions();
@@ -108,9 +108,9 @@ class AccountServiceTest {
         account.addBalance(new BigDecimal(10000));
         testService.persist(user, account);
         // when
-        accountService.withdraw(account.getId(), new BigDecimal(5000));
+        accountService.withdraw(account.getAccountNumber(), new BigDecimal(5000));
         // then
-        Account result = em.find(Account.class, account.getId());
+        Account result = em.find(Account.class, account.getAccountNumber());
         BigDecimal expected = new BigDecimal(5000);
 
         SoftAssertions s = new SoftAssertions();
@@ -127,7 +127,7 @@ class AccountServiceTest {
         testService.persist(user, account);
         // when then
         assertThrows(BadRequestException.class, () ->
-                accountService.withdraw(account.getId(), new BigDecimal(20000)));
+                accountService.withdraw(account.getAccountNumber(), new BigDecimal(20000)));
     }
 
     @Test
@@ -139,10 +139,10 @@ class AccountServiceTest {
         fromAccount.addBalance(new BigDecimal(10000));
         testService.persist(user, fromAccount, toAccount);
         // when
-        accountService.transfer(fromAccount.getId(), toAccount.getId(), new BigDecimal(5000));
+        accountService.transfer(fromAccount.getAccountNumber(), toAccount.getAccountNumber(), new BigDecimal(5000));
         // then
-        Account resultFromAccount = em.find(Account.class, fromAccount.getId());
-        Account toFromAccount = em.find(Account.class, toAccount.getId());
+        Account resultFromAccount = em.find(Account.class, fromAccount.getAccountNumber());
+        Account toFromAccount = em.find(Account.class, toAccount.getAccountNumber());
         BigDecimal fromAccountBalanceExpected = new BigDecimal(5000);
         BigDecimal toAccountBalanceExpected = new BigDecimal(5000);
 
@@ -159,9 +159,9 @@ class AccountServiceTest {
         Account account = new Account(user, "11111111");
         testService.persist(user, account);
         // when
-        accountService.deleteAccount(account.getId());
+        accountService.deleteAccount(account.getAccountNumber());
         // then
-        Account result = em.find(Account.class, account.getId());
+        Account result = em.find(Account.class, account.getAccountNumber());
         assertThat(result.isDeleted()).isTrue();
     }
 }
