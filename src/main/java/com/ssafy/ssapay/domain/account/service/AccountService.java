@@ -156,7 +156,7 @@ public class AccountService {
 
         paymentClient.requestTransfer(fromAccountNumber, toAccountNumber, amount);
 
-        PaymentRecord paymentRecord = new PaymentRecord(fromAccountNumber, amount.negate());
+        PaymentRecord paymentRecord = new PaymentRecord(fromAccountNumber, toAccountNumber, amount.negate());
         Account fromAccount = accountWriteRepository.findByAccountNumberForUpdate(fromAccountNumber)
                 .orElseThrow(() -> new BadRequestException("From account not found"));
         fromAccount.substractBalance(amount);
@@ -173,8 +173,6 @@ public class AccountService {
 
         PaymentRecord paymentRecord = new PaymentRecord(fromAccountNumber, account.getAccountNumber(), amount);
         paymentRecordWriteRepository.save(paymentRecord);
-
-        log.debug("deposit {} {}", toAccountNumber, amount);
     }
 
     // 계좌 삭제
