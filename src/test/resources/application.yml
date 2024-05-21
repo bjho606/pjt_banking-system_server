@@ -16,7 +16,7 @@ spring:
     open-in-view: false
     database: mysql
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
     defer-datasource-initialization: true
     properties:
       hibernate:
@@ -33,4 +33,12 @@ logging:
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{traceId}] %highlight(%-5level) %cyan(%logger{36}.%M) - %msg%n"
   level:
-    root: debug
+    root: info
+
+account:
+  number:
+    prefix: mj
+
+external:
+  transfer:
+    url: http://13.124.221.0:8080/api/v1/account/transfer/external
