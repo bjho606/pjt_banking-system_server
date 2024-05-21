@@ -3,7 +3,7 @@ import http from "k6/http";
 import {check} from "k6";
 
 export const options = {
-    vus: 50, // 가상 사용자 수
+    vus: 30, // 가상 사용자 수
     duration: "30s", // 테스트 시간
 
     thresholds: {
@@ -15,7 +15,7 @@ export default function () {
     let num = getRandomValue(1, 2);
     if (num === 1) {
         transferApi1();
-    } else transferApi2();
+    } else transferApi1();
 }
 
 function getRandomValue(min, max) {
