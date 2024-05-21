@@ -61,7 +61,7 @@ class AccountServiceConcurrencyTest {
         for (int i = 0; i < totalCount; ++i) {
             executorService.submit(() -> {
                 try {
-                    accountService.deposit(account.getId(), new BigDecimal("10000"));
+                    accountService.deposit(account.getAccountNumber(), new BigDecimal("10000"));
                     successCount.incrementAndGet();
                 } catch (Exception e) {
                     System.out.println(e.getMessage());
@@ -76,7 +76,7 @@ class AccountServiceConcurrencyTest {
         System.out.println("successCount = " + successCount);
         System.out.println("failCount = " + failCount);
         //then
-        Account result = em.find(Account.class, account.getId());
+        Account result = em.find(Account.class, account.getAccountNumber());
         SoftAssertions softly = new SoftAssertions();
         softly.assertThat(successCount.get()).isEqualTo(totalCount);
         softly.assertThat(result.getBalance()).isEqualTo(new BigDecimal("2000000.00"));
@@ -102,7 +102,7 @@ class AccountServiceConcurrencyTest {
         for (int i = 0; i < cnt; ++i) {
             executorService.submit(() -> {
                 try {
-                    accountService.withdraw(account.getId(), useBalance);
+                    accountService.withdraw(account.getAccountNumber(), useBalance);
 
                     successCount.incrementAndGet();
                 } catch (Exception e) {
@@ -117,7 +117,7 @@ class AccountServiceConcurrencyTest {
         System.out.println("successCount = " + successCount);
         System.out.println("failCount = " + failCount);
         // then
-        Account updatedAccount = em.find(Account.class, account.getId());
+        Account updatedAccount = em.find(Account.class, account.getAccountNumber());
 
         SoftAssertions s = new SoftAssertions();
         s.assertThat(updatedAccount.getBalance()).isEqualTo(new BigDecimal("0.00"));
@@ -147,8 +147,8 @@ class AccountServiceConcurrencyTest {
         for (int i = 0; i < cnt; ++i) {
             executorService.submit(() -> {
                 try {
-                    accountService.transfer(account1.getId(), account2.getId(), balance1);
-                    accountService.transfer(account2.getId(), account1.getId(), balance2);
+                    accountService.transfer(account1.getAccountNumber(), account2.getAccountNumber(), balance1);
+                    accountService.transfer(account2.getAccountNumber(), account1.getAccountNumber(), balance2);
 
                     successCount.incrementAndGet();
                 } catch (Exception e) {
@@ -164,8 +164,8 @@ class AccountServiceConcurrencyTest {
         System.out.println("failCount = " + failCount);
 
         // then
-        Account updatedAccount1 = em.find(Account.class, account1.getId());
-        Account updatedAccount2 = em.find(Account.class, account2.getId());
+        Account updatedAccount1 = em.find(Account.class, account1.getAccountNumber());
+        Account updatedAccount2 = em.find(Account.class, account2.getAccountNumber());
 
         SoftAssertions s = new SoftAssertions();
         s.assertThat(updatedAccount1.getBalance()).isEqualTo(new BigDecimal("30000.00"));

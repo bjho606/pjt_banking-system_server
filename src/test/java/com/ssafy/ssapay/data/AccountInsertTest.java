@@ -6,9 +6,12 @@ import com.ssafy.ssapay.infra.repository.read.AccountReadRepository;
 import com.ssafy.ssapay.infra.repository.read.UserReadRepository;
 import java.util.ArrayList;
 import java.util.List;
-import org.springframework.beans.factory.annotation.Autowired;
 
-//@SpringBootTest
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+
+@SpringBootTest
 class AccountInsertTest {
     private final AccountReadRepository accountReadRepository;
     private final UserReadRepository userRepository;
@@ -20,7 +23,7 @@ class AccountInsertTest {
         this.userRepository = userRepository;
     }
 
-    //    @Test
+    @Test
     void test() {
         //given
         List<User> users = userRepository.findAll();
@@ -36,7 +39,7 @@ class AccountInsertTest {
             User user = users.get(i);
 
             for (int j = 0; j < 10; ++j) {
-                accounts.add(new Account(user, "USER" + i + "ACCOUNT" + j));
+                accounts.add(new Account(user, "jh-USER" + i + "ACCOUNT" + j));
             }
         }
         accountReadRepository.saveAll(accounts);

@@ -15,7 +15,8 @@ public interface AccountWriteRepository extends JpaRepository<Account, Long> {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
-            SELECT a FROM Account a WHERE a.id = :id and a.isDeleted = false
+            SELECT a FROM Account a WHERE a.accountNumber = :accountNumber and a.isDeleted = false
             """)
-    Optional<Account> findByIdForUpdate(@Param("id") Long id);
+    Optional<Account> findByAccountNumberForUpdate(@Param("accountNumber") String accountNumber);
+
 }

@@ -70,7 +70,7 @@ class AccountControllerTest {
         mockMvc.perform(requestBuilder)
                 .andDo(print())
                 .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(jsonPath("$.accountId")
+                .andExpect(jsonPath("$.accountNumber")
                         .isNumber());
     }
 
@@ -83,7 +83,7 @@ class AccountControllerTest {
         testTransactionService.persist(user, account);
         // when then
         RequestBuilder requestBuilder = MockMvcRequestBuilders.get("/api/v1/account/balance")
-                .content("{\"accountId\": " + account.getId() + "}")
+                .content("{\"accountNumber\": " + account.getAccountNumber() + "}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .characterEncoding(StandardCharsets.UTF_8.displayName());
@@ -103,7 +103,7 @@ class AccountControllerTest {
         testTransactionService.persist(user, account);
         // when
         RequestBuilder requestBuilder = MockMvcRequestBuilders.post("/api/v1/account/deposit")
-                .content("{\"accountId\": " + account.getId() + ", \"amount\": 10000}")
+                .content("{\"accountNumber\": " + account.getAccountNumber() + ", \"amount\": 10000}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .characterEncoding(StandardCharsets.UTF_8.displayName());
@@ -122,7 +122,7 @@ class AccountControllerTest {
         testTransactionService.persist(user, account);
         // when
         RequestBuilder requestBuilder = MockMvcRequestBuilders.post("/api/v1/account/withdraw")
-                .content("{\"accountId\": " + account.getId() + ", \"amount\": 5000}")
+                .content("{\"accountNumber\": " + account.getAccountNumber() + ", \"amount\": 5000}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .characterEncoding(StandardCharsets.UTF_8.displayName());
@@ -142,7 +142,7 @@ class AccountControllerTest {
         testTransactionService.persist(user, fromAccount, toAccount);
         // when
         RequestBuilder requestBuilder = MockMvcRequestBuilders.post("/api/v1/account/transfer")
-                .content("{\"fromAccountId\": " + fromAccount.getId() + ", \"toAccountId\": " + toAccount.getId()
+                .content("{\"fromaccountNumber\": " + fromAccount.getAccountNumber() + ", \"toaccountNumber\": " + toAccount.getAccountNumber()
                         + ", \"amount\": 5000}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
@@ -161,7 +161,7 @@ class AccountControllerTest {
         testTransactionService.persist(user, account);
         // when
         RequestBuilder requestBuilder = MockMvcRequestBuilders.delete("/api/v1/account")
-                .content("{\"accountId\": " + account.getId() + "}")
+                .content("{\"accountNumber\": " + account.getAccountNumber() + "}")
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .characterEncoding(StandardCharsets.UTF_8.displayName());

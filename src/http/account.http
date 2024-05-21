@@ -11,7 +11,7 @@ GET http://localhost:8080/api/v1/account/balance
 Content-Type: application/json
 
 {
-  "accountId": 72
+  "accountNumber": 72
 }
 
 ### 계좌 입금
@@ -19,7 +19,7 @@ POST http://localhost:8080/api/v1/account/deposit
 Content-Type: application/json
 
 {
-  "accountId": 73,
+  "accountNumber": 73,
   "amount": 1000
 }
 
@@ -28,7 +28,7 @@ POST http://localhost:8080/api/v1/account/withdraw
 Content-Type: application/json
 
 {
-  "accountId": 72,
+  "accountNumber": 72,
   "amount": 1000
 }
 
@@ -37,8 +37,8 @@ POST http://localhost:8080/api/v1/account/transfer
 Content-Type: application/json
 
 {
-  "fromAccountId": 73,
-  "toAccountId": 72,
+  "fromaccountNumber": 73,
+  "toaccountNumber": 72,
   "amount": 1000
 }
 
@@ -47,7 +47,7 @@ DELETE http://localhost:8080/api/v1/account
 Content-Type: application/json
 
 {
-  "accountId": 72
+  "accountNumber": 72
 }
 
 
@@ -64,7 +64,7 @@ GET http://localhost:8080/api/v1/account/recordByPeriod
 Content-Type: application/json
 
 {
-  "accountId": 73,
+  "accountNumber": 73,
   "startDate": "2024-05-16",
   "endDate": "2024-05-17"
 }

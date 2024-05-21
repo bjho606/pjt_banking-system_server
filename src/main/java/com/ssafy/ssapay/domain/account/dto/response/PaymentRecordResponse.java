@@ -9,24 +9,24 @@ import java.time.LocalDateTime;
 
 @Getter
 public class PaymentRecordResponse {
-    private Long fromAccountId;
-    private long toAccountId;
+    private String fromAccountNumber;
+    private String toAccountNumber;
     private BigDecimal amount;
     private LocalDateTime createdAt;
 
-    public PaymentRecordResponse(Long fromAccountId, long toAccountId, BigDecimal amount, LocalDateTime createdAt) {
-        this.fromAccountId = fromAccountId;
-        this.toAccountId = toAccountId;
+    public PaymentRecordResponse(String fromAccountNumber, String toAccountNumber, BigDecimal amount, LocalDateTime createdAt) {
+        this.fromAccountNumber = fromAccountNumber;
+        this.toAccountNumber = toAccountNumber;
         this.amount = amount;
         this.createdAt = createdAt;
     }
 
     public static PaymentRecordResponse from(PaymentRecord paymentRecord) {
-        Long fromAccountId = (paymentRecord.getFromAccount() != null) ? paymentRecord.getFromAccount().getId() : null;
+        String fromAccountNumber = (paymentRecord.getFromAccount() != null) ? paymentRecord.getFromAccount().getAccountNumber() : null;
 
         return new PaymentRecordResponse(
-                fromAccountId,
-                paymentRecord.getToAccount().getId(),
+                fromAccountNumber,
+                paymentRecord.getToAccount().getAccountNumber(),
                 paymentRecord.getAmount(),
                 paymentRecord.getCreatedAt());
     }

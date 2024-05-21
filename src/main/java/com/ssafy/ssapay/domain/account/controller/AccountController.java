@@ -1,7 +1,7 @@
 package com.ssafy.ssapay.domain.account.controller;
 
 import com.ssafy.ssapay.domain.account.dto.request.*;
-import com.ssafy.ssapay.domain.account.dto.response.AccountIdResponse;
+import com.ssafy.ssapay.domain.account.dto.response.accountNumberResponse;
 import com.ssafy.ssapay.domain.account.dto.response.BalanceResponse;
 import com.ssafy.ssapay.domain.account.dto.response.RecordsInPeriodResponse;
 import com.ssafy.ssapay.domain.account.service.AccountService;
@@ -25,33 +25,33 @@ public class AccountController {
     private final AccountService accountService;
 
     @PostMapping
-    public AccountIdResponse createAccount(@RequestBody AccountCreateRequest request) {
+    public accountNumberResponse createAccount(@RequestBody AccountCreateRequest request) {
         return accountService.createAccount(request.userId());
     }
 
     @GetMapping("/balance")
     public BalanceResponse checkBalance(@RequestBody CheckBalanceRequest request) {
-        return accountService.checkBalance(request.accountId());
+        return accountService.checkBalance(request.accountNumber());
     }
 
     @PostMapping("/deposit")
     public void deposit(@RequestBody DepositRequest request) {
-        accountService.deposit(request.accountId(), request.amount());
+        accountService.deposit(request.accountNumber(), request.amount());
     }
 
     @PostMapping("/withdraw")
     public void withdraw(@RequestBody WithdrawRequest request) {
-        accountService.withdraw(request.accountId(), request.amount());
+        accountService.withdraw(request.accountNumber(), request.amount());
     }
 
     @PostMapping("/transfer")
     public void transfer(@RequestBody TransferRequest request) {
-        accountService.transfer(request.fromAccountId(), request.toAccountId(), request.amount());
+        accountService.transfer(request.fromAccountNumber(), request.toAccountNumber(), request.amount());
     }
 
     @DeleteMapping
     public void deleteAccount(@RequestBody AccountDeleteRequest request) {
-        accountService.deleteAccount(request.accountId());
+        accountService.deleteAccount(request.accountNumber());
     }
 
     @GetMapping("/accountInfos")
@@ -61,7 +61,7 @@ public class AccountController {
 
     @GetMapping("/recordByPeriod")
     public RecordsInPeriodResponse checkPaymentRecordByPeriod(@RequestBody checkPaymentRecordByPeriod request) {
-        return accountService.checkPaymentRecordByPeriod(request.accountId(), request.startDate(), request.endDate());
+        return accountService.checkPaymentRecordByPeriod(request.accountNumber(), request.startDate(), request.endDate());
     }
 
 }

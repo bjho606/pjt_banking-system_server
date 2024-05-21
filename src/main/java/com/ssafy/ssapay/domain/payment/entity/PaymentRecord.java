@@ -27,11 +27,11 @@ public class PaymentRecord {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "from_account_id")
+    @JoinColumn(name = "from_account_number")
     private Account fromAccount;
 
     @ManyToOne
-    @JoinColumn(name = "to_account_id")
+    @JoinColumn(name = "to_account_number")
     private Account toAccount;
 
     @Column(nullable = false)
