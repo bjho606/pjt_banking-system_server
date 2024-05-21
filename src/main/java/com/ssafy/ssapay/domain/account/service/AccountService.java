@@ -11,10 +11,9 @@ import com.ssafy.ssapay.domain.payment.entity.PaymentRecord;
 import com.ssafy.ssapay.domain.user.entity.User;
 import com.ssafy.ssapay.global.error.type.BadRequestException;
 import com.ssafy.ssapay.infra.payment.PaymentClient;
-import com.ssafy.ssapay.infra.repository.read.AccountReadRepository;
-import com.ssafy.ssapay.infra.repository.write.AccountWriteRepository;
-import com.ssafy.ssapay.infra.repository.write.PaymentRecordWriteRepository;
-import com.ssafy.ssapay.infra.repository.write.UserWriteRepository;
+import com.ssafy.ssapay.infra.repository.AccountRepository;
+import com.ssafy.ssapay.infra.repository.PaymentRecordRepository;
+import com.ssafy.ssapay.infra.repository.UserRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -32,11 +31,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Transactional(readOnly = true)
 public class AccountService {
-    private final AccountReadRepository accountReadRepository;
-
-    private final UserWriteRepository userWriteRepository;
-    private final AccountWriteRepository accountWriteRepository;
-    private final PaymentRecordWriteRepository paymentRecordWriteRepository;
+    private final AccountRepository accountRepository;
+    private final UserRepository userRepository;
+    private final PaymentRecordRepository paymentRecordRepository;
 
     private final PaymentClient paymentClient;
 
@@ -46,7 +43,7 @@ public class AccountService {
     // 계좌 생성
     @Transactional
     public accountNumberResponse createAccount(Long userId) {
-        User user = userWriteRepository.findById(userId)
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BadRequestException("User not found"));
 
         // 8자리 계좌번호 생성
@@ -62,14 +59,14 @@ public class AccountService {
 
         log.debug("createAccount {} with {}", userId, newAccountNumber);
 
-        Account newAccount = accountWriteRepository.save(account);
+        Account newAccount = accountRepository.save(account);
 
         return new accountNumberResponse(newAccount.getAccountNumber());
     }
 
     // 계좌 잔액 확인
     public BalanceResponse checkBalance(String accountNumber) {
-        Account account = accountReadRepository.findByAccountNumber(accountNumber)
+        Account account = accountRepository.findByAccountNumber(accountNumber)
                 .orElseThrow(() -> new BadRequestException("Account not found"));
         return new BalanceResponse(account.getBalance());
     }
@@ -77,13 +74,13 @@ public class AccountService {
     // 계좌 입금
     @Transactional
     public void deposit(String accountNumber, BigDecimal amount) {
-        Account account = accountWriteRepository.findByAccountNumberForUpdate(accountNumber)
+        Account account = accountRepository.findByAccountNumberForUpdate(accountNumber)
                 .orElseThrow(() -> new BadRequestException("Account not found"));
 
         account.addBalance(amount);
 
         PaymentRecord paymentRecord = new PaymentRecord(account.getAccountNumber(), amount);
-        paymentRecordWriteRepository.save(paymentRecord);
+        paymentRecordRepository.save(paymentRecord);
 
         log.debug("deposit {} {}", accountNumber, amount);
     }
@@ -91,7 +88,7 @@ public class AccountService {
     // 계좌 출금
     @Transactional
     public void withdraw(String accountNumber, BigDecimal amount) {
-        Account account = accountWriteRepository.findByAccountNumberForUpdate(accountNumber)
+        Account account = accountRepository.findByAccountNumberForUpdate(accountNumber)
                 .orElseThrow(() -> new BadRequestException("Account not found"));
 
         if (account.isLess(amount)) {
@@ -101,7 +98,7 @@ public class AccountService {
         account.substractBalance(amount);
 
         PaymentRecord paymentRecord = new PaymentRecord(account.getAccountNumber(), amount.negate());
-        paymentRecordWriteRepository.save(paymentRecord);
+        paymentRecordRepository.save(paymentRecord);
 
         log.debug("withdraw {} {}", accountNumber, amount);
     }
@@ -130,14 +127,14 @@ public class AccountService {
         Account toAccount;
 
         if (fromAccountNumber.compareTo(toAccountNumber) > 0) {
-            fromAccount = accountWriteRepository.findByAccountNumberForUpdate(fromAccountNumber)
+            fromAccount = accountRepository.findByAccountNumberForUpdate(fromAccountNumber)
                     .orElseThrow(() -> new BadRequestException("From account not found"));
-            toAccount = accountWriteRepository.findByAccountNumberForUpdate(toAccountNumber)
+            toAccount = accountRepository.findByAccountNumberForUpdate(toAccountNumber)
                     .orElseThrow(() -> new BadRequestException("To account not found"));
         } else {
-            toAccount = accountWriteRepository.findByAccountNumberForUpdate(toAccountNumber)
+            toAccount = accountRepository.findByAccountNumberForUpdate(toAccountNumber)
                     .orElseThrow(() -> new BadRequestException("To account not found"));
-            fromAccount = accountWriteRepository.findByAccountNumberForUpdate(fromAccountNumber)
+            fromAccount = accountRepository.findByAccountNumberForUpdate(fromAccountNumber)
                     .orElseThrow(() -> new BadRequestException("From account not found"));
         }
 
@@ -148,48 +145,48 @@ public class AccountService {
         fromAccount.substractBalance(amount);
         toAccount.addBalance(amount);
 
-        accountWriteRepository.save(fromAccount);
-        accountWriteRepository.save(toAccount);
+        accountRepository.save(fromAccount);
+        accountRepository.save(toAccount);
 
         PaymentRecord paymentRecord = new PaymentRecord(fromAccount.getAccountNumber(),
                 toAccount.getAccountNumber(),
                 amount);
-        paymentRecordWriteRepository.save(paymentRecord);
+        paymentRecordRepository.save(paymentRecord);
 
         log.debug("transfer {} to {} {}", fromAccountNumber, toAccountNumber, amount);
     }
 
     private void processWithOuterSystem(String fromAccountNumber, String toAccountNumber, BigDecimal amount) {
-        if (!accountWriteRepository.existsByAccountNumber(fromAccountNumber)) {
+        if (!accountRepository.existsByAccountNumber(fromAccountNumber)) {
             throw new BadRequestException("From account not found");
         }
 
         paymentClient.requestTransfer(fromAccountNumber, toAccountNumber, amount);
 
         PaymentRecord paymentRecord = new PaymentRecord(fromAccountNumber, toAccountNumber, amount.negate());
-        Account fromAccount = accountWriteRepository.findByAccountNumberForUpdate(fromAccountNumber)
+        Account fromAccount = accountRepository.findByAccountNumberForUpdate(fromAccountNumber)
                 .orElseThrow(() -> new BadRequestException("From account not found"));
         fromAccount.substractBalance(amount);
-        paymentRecordWriteRepository.save(paymentRecord);
+        paymentRecordRepository.save(paymentRecord);
         generateRandomException();
     }
 
     //다른 서비스에서 송금 요청
     @Transactional
     public void transferExternal(String fromAccountNumber, String toAccountNumber, BigDecimal amount) {
-        Account account = accountWriteRepository.findByAccountNumberForUpdate(toAccountNumber)
+        Account account = accountRepository.findByAccountNumberForUpdate(toAccountNumber)
                 .orElseThrow(() -> new BadRequestException("Account not found"));
 
         account.addBalance(amount);
 
         PaymentRecord paymentRecord = new PaymentRecord(fromAccountNumber, account.getAccountNumber(), amount);
-        paymentRecordWriteRepository.save(paymentRecord);
+        paymentRecordRepository.save(paymentRecord);
     }
 
     // 계좌 삭제
     @Transactional
     public void deleteAccount(String accountNumber) {
-        Account account = accountWriteRepository.findByAccountNumberForUpdate(accountNumber)
+        Account account = accountRepository.findByAccountNumberForUpdate(accountNumber)
                 .orElseThrow(() -> new BadRequestException("Account not found"));
         account.delete();
 
@@ -198,7 +195,7 @@ public class AccountService {
 
     // 유저의 전체 계좌 조회
     public AllAccountsResponse checkAllAccounts(Long userId) {
-        List<Account> accounts = accountReadRepository.findAllAccountByUserId(userId);
+        List<Account> accounts = accountRepository.findAllAccountByUserId(userId);
         List<AccountResponse> accountInfos = accounts.stream()
                 .map(AccountResponse::from)
                 .toList();
@@ -211,7 +208,7 @@ public class AccountService {
                                                               LocalDate endDate) {
         LocalDateTime start = startDate.atStartOfDay();
         LocalDateTime end = endDate.atTime(LocalTime.MAX);
-        List<PaymentRecord> records = accountReadRepository.findByAccountNumberAndPeriod(accountNumber, start, end);
+        List<PaymentRecord> records = accountRepository.findByAccountNumberAndPeriod(accountNumber, start, end);
         List<PaymentRecordResponse> recordInfos = records.stream()
                 .map(PaymentRecordResponse::from)
                 .toList();
