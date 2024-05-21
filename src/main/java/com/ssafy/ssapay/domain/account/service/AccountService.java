@@ -116,6 +116,15 @@ public class AccountService {
         }
     }
 
+    private static Random random = new Random();
+
+    public static void generateRandomException() {
+        int num = random.nextInt(50) + 1; // 1부터 50까지의 랜덤한 숫자 생성
+        if (num == 1) {
+            throw new RuntimeException("Exception thrown when random number is 1");
+        }
+    }
+
     private void processWithInnerSystem(String fromAccountNumber, String toAccountNumber, BigDecimal amount) {
         Account fromAccount;
         Account toAccount;
@@ -142,7 +151,8 @@ public class AccountService {
         accountWriteRepository.save(fromAccount);
         accountWriteRepository.save(toAccount);
 
-        PaymentRecord paymentRecord = new PaymentRecord(fromAccount.getAccountNumber(), toAccount.getAccountNumber(),
+        PaymentRecord paymentRecord = new PaymentRecord(fromAccount.getAccountNumber(),
+                toAccount.getAccountNumber(),
                 amount);
         paymentRecordWriteRepository.save(paymentRecord);
 
@@ -150,13 +160,18 @@ public class AccountService {
     }
 
     private void processWithOuterSystem(String fromAccountNumber, String toAccountNumber, BigDecimal amount) {
+        if (!accountWriteRepository.existsByAccountNumber(fromAccountNumber)) {
+            throw new BadRequestException("From account not found");
+        }
+
+        paymentClient.requestTransfer(fromAccountNumber, toAccountNumber, amount);
+
+        PaymentRecord paymentRecord = new PaymentRecord(fromAccountNumber, toAccountNumber, amount.negate());
         Account fromAccount = accountWriteRepository.findByAccountNumberForUpdate(fromAccountNumber)
                 .orElseThrow(() -> new BadRequestException("From account not found"));
-
         fromAccount.substractBalance(amount);
-        PaymentRecord paymentRecord = new PaymentRecord(fromAccount.getAccountNumber(), amount.negate());
         paymentRecordWriteRepository.save(paymentRecord);
-        paymentClient.requestTransfer(fromAccountNumber, toAccountNumber, amount);
+        generateRandomException();
     }
 
     //다른 서비스에서 송금 요청
@@ -169,8 +184,6 @@ public class AccountService {
 
         PaymentRecord paymentRecord = new PaymentRecord(fromAccountNumber, account.getAccountNumber(), amount);
         paymentRecordWriteRepository.save(paymentRecord);
-
-        log.debug("deposit {} {}", toAccountNumber, amount);
     }
 
     // 계좌 삭제

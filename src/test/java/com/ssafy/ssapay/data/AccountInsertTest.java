@@ -2,46 +2,41 @@ package com.ssafy.ssapay.data;
 
 import com.ssafy.ssapay.domain.account.entity.Account;
 import com.ssafy.ssapay.domain.user.entity.User;
-import com.ssafy.ssapay.infra.repository.read.AccountReadRepository;
-import com.ssafy.ssapay.infra.repository.read.UserReadRepository;
+import com.ssafy.ssapay.infra.repository.write.AccountWriteRepository;
+import com.ssafy.ssapay.infra.repository.write.UserWriteRepository;
 import java.util.ArrayList;
 import java.util.List;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
 class AccountInsertTest {
-    private final AccountReadRepository accountReadRepository;
-    private final UserReadRepository userRepository;
+    private final AccountWriteRepository accountRepository;
+    private final UserWriteRepository userRepository;
 
     @Autowired
-    public AccountInsertTest(AccountReadRepository accountReadRepository,
-                             UserReadRepository userRepository) {
-        this.accountReadRepository = accountReadRepository;
+    public AccountInsertTest(AccountWriteRepository accountRepository,
+                             UserWriteRepository userRepository) {
+        this.accountRepository = accountRepository;
         this.userRepository = userRepository;
     }
 
     @Test
     void test() {
-        //given
         List<User> users = userRepository.findAll();
-        for (int i = 0; i < 100000; i += 1000) {
-            System.out.println("i: " + i);
-            insert10000Account(i, users);
+
+        for (User user : users) {
+            System.out.println(user.getUsername());
+            insertAccounts(user);
         }
     }
 
-    private void insert10000Account(int start, List<User> users) {
-        ArrayList<Account> accounts = new ArrayList<>();
-        for (int i = start; i < start + 1000; ++i) {
-            User user = users.get(i);
-
-            for (int j = 0; j < 10; ++j) {
-                accounts.add(new Account(user, "jh-USER" + i + "ACCOUNT" + j));
-            }
+    public void insertAccounts(User user) {
+        List<Account> accounts = new ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            accounts.add(new Account(user, "mj-" + user.getUsername() + i));
         }
-        accountReadRepository.saveAll(accounts);
+        accountRepository.saveAll(accounts);
     }
 }

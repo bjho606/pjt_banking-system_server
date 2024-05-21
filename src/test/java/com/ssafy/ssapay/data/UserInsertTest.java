@@ -5,13 +5,12 @@ import static com.ssafy.ssapay.util.Fixture.createUser;
 import com.ssafy.ssapay.domain.user.entity.User;
 import com.ssafy.ssapay.infra.repository.write.UserWriteRepository;
 import java.util.ArrayList;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-public class UserInsertTest {
+class UserInsertTest {
     private final UserWriteRepository userWriteRepository;
 
     @Autowired
