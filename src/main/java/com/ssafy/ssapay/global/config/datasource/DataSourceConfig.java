@@ -1,46 +1,55 @@
 package com.ssafy.ssapay.global.config.datasource;
 
 import com.zaxxer.hikari.HikariDataSource;
+import java.util.HashMap;
+import javax.sql.DataSource;
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.autoconfigure.orm.jpa.HibernateProperties;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.orm.jpa.JpaVendorAdapter;
-import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+import org.springframework.context.annotation.DependsOn;
+import org.springframework.context.annotation.Primary;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.jdbc.datasource.LazyConnectionDataSourceProxy;
 
 @Configuration
 @RequiredArgsConstructor
+@EnableJpaRepositories(basePackages = "com.ssafy.ssapay.infra.repository")
 public class DataSourceConfig {
-    private final WriteDataSourceProperties writeDataSourceProperties;
-    private final ReadDataSourceProperties readDataSourceProperties;
 
-    @Bean(name = "writeDataSource")
-    public HikariDataSource writeDataSource() {
-        HikariDataSource hikariDataSource = new HikariDataSource();
-        hikariDataSource.setDriverClassName(writeDataSourceProperties.getDriver());
-        hikariDataSource.setJdbcUrl(writeDataSourceProperties.getUrl());
-        hikariDataSource.setUsername(writeDataSourceProperties.getUsername());
-        hikariDataSource.setPassword(writeDataSourceProperties.getPassword());
-        return hikariDataSource;
-    }
-
-    @Bean(name = "readDataSource")
-    public HikariDataSource readDataSource() {
-        HikariDataSource hikariDataSource = new HikariDataSource();
-        hikariDataSource.setDriverClassName(readDataSourceProperties.getDriver());
-        hikariDataSource.setJdbcUrl(readDataSourceProperties.getUrl());
-        hikariDataSource.setUsername(readDataSourceProperties.getUsername());
-        hikariDataSource.setPassword(readDataSourceProperties.getPassword());
-        return hikariDataSource;
+    @Bean
+    @ConfigurationProperties(prefix = "spring.datasource.write")
+    public DataSource writeDataSource() {
+        return DataSourceBuilder.create().type(HikariDataSource.class).build();
     }
 
     @Bean
-    public HibernateProperties hibernateProperties() {
-        return new HibernateProperties();
+    @ConfigurationProperties(prefix = "spring.datasource.read")
+    public DataSource readDataSource() {
+        return DataSourceBuilder.create().type(HikariDataSource.class).build();
     }
 
     @Bean
-    public JpaVendorAdapter jpaVendorAdapter() {
-        return new HibernateJpaVendorAdapter();
+    @DependsOn({"writeDataSource", "readDataSource"})
+    public DataSource routeDataSource() {
+        DataSourceRouter dataSourceRouter = new DataSourceRouter();
+        DataSource writeDataSource = writeDataSource();
+        DataSource readDataSource = readDataSource();
+
+        HashMap<Object, Object> dataSourceMap = new HashMap<>();
+        dataSourceMap.put("write", writeDataSource);
+        dataSourceMap.put("read", readDataSource);
+        dataSourceRouter.setTargetDataSources(dataSourceMap);
+        dataSourceRouter.setDefaultTargetDataSource(writeDataSource);
+
+        return dataSourceRouter;
+    }
+
+    @Bean
+    @Primary
+    @DependsOn({"routeDataSource"})
+    public DataSource dataSource() {
+        return new LazyConnectionDataSourceProxy(routeDataSource());
     }
 }

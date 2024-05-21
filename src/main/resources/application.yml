@@ -1,17 +1,16 @@
 spring:
   datasource:
-    master:
-      url: jdbc:mysql://${master.host}:${master.port}/${master.database}?useSSL=false&useUnicode=true&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
+    write:
+      jdbc-url: jdbc:mysql://${master.host}:${master.port}/${master.database}?useSSL=false&useUnicode=true&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
       username: ${master.username}
       password: ${master.password}
-      driver: com.mysql.cj.jdbc.Driver
-    slave:
-      url: jdbc:mysql://${slave.host}:${slave.port}/${slave.database}?useSSL=false&useUnicode=true&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
+    read:
+      jdbc-url: jdbc:mysql://${slave.host}:${slave.port}/${slave.database}?useSSL=false&useUnicode=true&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
       username: ${slave.username}
       password: ${slave.password}
-      driver: com.mysql.cj.jdbc.Driver
 
   jpa:
+    open-in-view: false
     hibernate:
       ddl-auto: none
     database: mysql

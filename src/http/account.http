@@ -7,19 +7,19 @@ Content-Type: application/json
 }
 
 ### 계좌 잔액 조회
-GET http://13.124.221.0:8080/api/v1/account/balance
+GET http://34.47.68.121:8080/api/v1/account/balance
 Content-Type: application/json
 
 {
-  "accountNumber": "jh-USER0ACCOUNT0"
+  "accountNumber": "mj-user00"
 }
 
 ### 계좌 입금
-POST http://localhost:8080/api/v1/account/deposit
+POST http://34.47.68.121:8080/api/v1/account/deposit
 Content-Type: application/json
 
 {
-  "accountNumber": "mj82227053",
+  "accountNumber": "mj-user00",
   "amount": 1000
 }
 
