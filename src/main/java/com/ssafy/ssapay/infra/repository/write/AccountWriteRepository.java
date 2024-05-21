@@ -16,4 +16,11 @@ public interface AccountWriteRepository extends JpaRepository<Account, String> {
             """)
     Optional<Account> findByAccountNumberForUpdate(@Param("accountNumber") String accountNumber);
 
+    @Query("""
+            SELECT CASE WHEN COUNT(a) > 0 THEN true ELSE false END
+            FROM Account a
+            WHERE a.accountNumber = :accountNumber 
+            and a.isDeleted = false
+            """)
+    boolean existsByAccountNumber(String accountNumber);
 }

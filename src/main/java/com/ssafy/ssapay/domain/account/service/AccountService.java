@@ -150,13 +150,17 @@ public class AccountService {
     }
 
     private void processWithOuterSystem(String fromAccountNumber, String toAccountNumber, BigDecimal amount) {
+        if (!accountWriteRepository.existsByAccountNumber(fromAccountNumber)) {
+            throw new BadRequestException("From account not found");
+        }
+
+        paymentClient.requestTransfer(fromAccountNumber, toAccountNumber, amount);
+
+        PaymentRecord paymentRecord = new PaymentRecord(fromAccountNumber, amount.negate());
         Account fromAccount = accountWriteRepository.findByAccountNumberForUpdate(fromAccountNumber)
                 .orElseThrow(() -> new BadRequestException("From account not found"));
-
         fromAccount.substractBalance(amount);
-        PaymentRecord paymentRecord = new PaymentRecord(fromAccount.getAccountNumber(), amount.negate());
         paymentRecordWriteRepository.save(paymentRecord);
-        paymentClient.requestTransfer(fromAccountNumber, toAccountNumber, amount);
     }
 
     //다른 서비스에서 송금 요청
