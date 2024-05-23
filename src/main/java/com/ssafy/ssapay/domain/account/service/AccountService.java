@@ -120,7 +120,7 @@ public class AccountService {
     }
 
     public static void generateRandomException() {
-        int num = random.nextInt(2) + 1;
+        int num = random.nextInt(50) + 1;
 //        int num = 1;
         if (num == 1) {
             throw new RuntimeException("Error occured!");
