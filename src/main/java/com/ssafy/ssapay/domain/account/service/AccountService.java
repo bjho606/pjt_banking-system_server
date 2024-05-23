@@ -1,5 +1,11 @@
 package com.ssafy.ssapay.domain.account.service;
 
+import com.ssafy.ssapay.domain.account.dto.request.AccountDeleteRequest;
+import com.ssafy.ssapay.domain.account.dto.request.CheckBalanceRequest;
+import com.ssafy.ssapay.domain.account.dto.request.DepositRequest;
+import com.ssafy.ssapay.domain.account.dto.request.TransferRequest;
+import com.ssafy.ssapay.domain.account.dto.request.WithdrawRequest;
+import com.ssafy.ssapay.domain.account.dto.request.checkPaymentRecordByPeriod;
 import com.ssafy.ssapay.domain.account.dto.response.AccountResponse;
 import com.ssafy.ssapay.domain.account.dto.response.AllAccountsResponse;
 import com.ssafy.ssapay.domain.account.dto.response.BalanceResponse;
@@ -7,37 +13,42 @@ import com.ssafy.ssapay.domain.account.dto.response.PaymentRecordResponse;
 import com.ssafy.ssapay.domain.account.dto.response.RecordsInPeriodResponse;
 import com.ssafy.ssapay.domain.account.dto.response.accountNumberResponse;
 import com.ssafy.ssapay.domain.account.entity.Account;
+import com.ssafy.ssapay.domain.account.implement.AccountNumberGenerator;
+import com.ssafy.ssapay.domain.account.implement.AccountReader;
+import com.ssafy.ssapay.domain.account.implement.AccountValidator;
+import com.ssafy.ssapay.domain.account.implement.AccountWriter;
+import com.ssafy.ssapay.domain.auth.dto.internal.LoginUser;
 import com.ssafy.ssapay.domain.payment.entity.PaymentRecord;
 import com.ssafy.ssapay.domain.user.entity.User;
+import com.ssafy.ssapay.domain.user.implementation.UserReader;
 import com.ssafy.ssapay.global.error.type.BadRequestException;
 import com.ssafy.ssapay.global.error.type.SsapayException;
+import com.ssafy.ssapay.global.util.CommonUtil;
 import com.ssafy.ssapay.infra.payment.PaymentClient;
 import com.ssafy.ssapay.infra.payment.PaymentProducer;
 import com.ssafy.ssapay.infra.repository.AccountRepository;
 import com.ssafy.ssapay.infra.repository.PaymentRecordRepository;
-import com.ssafy.ssapay.infra.repository.UserRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
-import java.util.Random;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
-@Transactional(readOnly = true)
 public class AccountService {
-    private static Random random = new Random();
+    private final AccountNumberGenerator accountNumberGenerator;
 
+    private final UserReader userReader;
+    private final AccountReader accountReader;
+    private final AccountWriter accountWriter;
+    private final AccountValidator accountValidator;
     private final AccountRepository accountRepository;
-    private final UserRepository userRepository;
     private final PaymentRecordRepository paymentRecordRepository;
 
     private final PaymentClient paymentClient;
@@ -46,42 +57,52 @@ public class AccountService {
     @Value("${account.number.prefix}")
     private String ACCOUNT_NUMBER_PREFIX;
 
+    public AccountService(AccountReader accountReader, AccountRepository accountRepository,
+                          PaymentRecordRepository paymentRecordRepository,
+                          UserReader userReader,
+                          AccountWriter accountWriter,
+                          AccountValidator accountValidator,
+                          PaymentClient paymentClient,
+                          PaymentProducer paymentProducer) {
+        this.accountReader = accountReader;
+        this.accountWriter = accountWriter;
+        this.accountValidator = accountValidator;
+        this.accountNumberGenerator = new AccountNumberGenerator();
+        this.accountRepository = accountRepository;
+        this.paymentRecordRepository = paymentRecordRepository;
+        this.userReader = userReader;
+        this.paymentClient = paymentClient;
+        this.paymentProducer = paymentProducer;
+    }
+
     // 계좌 생성
-    @Transactional
-    public accountNumberResponse createAccount(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BadRequestException("User not found"));
+    public accountNumberResponse createAccount(LoginUser loginUser) {
+        User user = userReader.getUserById(loginUser.id());
 
-        // 8자리 계좌번호 생성
-        Random random = new Random();
-        StringBuilder sb = new StringBuilder(8);
-        for (int i = 0; i < 8; i++) {
-            int digit = random.nextInt(10); // 0부터 9까지의 숫자 생성
-            sb.append(digit);
-        }
+        String accountNumber = accountNumberGenerator.generateAccountNumber(ACCOUNT_NUMBER_PREFIX);
+        Account account = new Account(user, accountNumber);
 
-        String newAccountNumber = sb.toString();
-        Account account = new Account(user, newAccountNumber);
-
-        log.debug("createAccount {} with {}", userId, newAccountNumber);
-
-        Account newAccount = accountRepository.save(account);
-
+        Account newAccount = accountWriter.appendNewAccount(account);
         return new accountNumberResponse(newAccount.getAccountNumber());
     }
 
-    // 계좌 잔액 확인
-    public BalanceResponse checkBalance(String accountNumber) {
-        Account account = accountRepository.findByAccountNumber(accountNumber)
-                .orElseThrow(() -> new BadRequestException("Account not found"));
+    @Transactional(readOnly = true)
+    public BalanceResponse checkBalance(CheckBalanceRequest request, LoginUser loginUser) {
+        Account account = accountReader.getAccountByAccountNumber(request.accountNumber());
+        accountValidator.validAccountOwner(account, loginUser);
+
         return new BalanceResponse(account.getBalance());
     }
 
     // 계좌 입금
     @Transactional
-    public void deposit(String accountNumber, BigDecimal amount) {
+    public void deposit(DepositRequest request, LoginUser loginUser) {
+        String accountNumber = request.accountNumber();
+        BigDecimal amount = request.amount();
+
         Account account = accountRepository.findByAccountNumberForUpdate(accountNumber)
                 .orElseThrow(() -> new BadRequestException("Account not found"));
+        accountValidator.validAccountOwner(account, loginUser);
 
         account.addBalance(amount);
 
@@ -93,9 +114,13 @@ public class AccountService {
 
     // 계좌 출금
     @Transactional
-    public void withdraw(String accountNumber, BigDecimal amount) {
+    public void withdraw(WithdrawRequest request, LoginUser loginUser) {
+        String accountNumber = request.accountNumber();
+        BigDecimal amount = request.amount();
+
         Account account = accountRepository.findByAccountNumberForUpdate(accountNumber)
                 .orElseThrow(() -> new BadRequestException("Account not found"));
+        accountValidator.validAccountOwner(account, loginUser);
 
         if (account.isLess(amount)) {
             throw new BadRequestException("잔액 부족");
@@ -105,29 +130,26 @@ public class AccountService {
 
         PaymentRecord paymentRecord = new PaymentRecord(account.getAccountNumber(), amount.negate());
         paymentRecordRepository.save(paymentRecord);
-
-        log.debug("withdraw {} {}", accountNumber, amount);
     }
 
     // 계좌 송금
     @Transactional
-    public void transfer(String fromAccountNumber, String toAccountNumber, BigDecimal amount) {
+    public void transfer(TransferRequest request, LoginUser loginUser) {
+        String fromAccountNumber = request.fromAccountNumber();
+        String toAccountNumber = request.toAccountNumber();
+        BigDecimal amount = request.amount();
+
         if (toAccountNumber.startsWith(ACCOUNT_NUMBER_PREFIX)) {
-            processWithInnerSystem(fromAccountNumber, toAccountNumber, amount);
+            processWithInnerSystem(fromAccountNumber, toAccountNumber, amount, loginUser);
         } else {
-            processWithOuterSystem(fromAccountNumber, toAccountNumber, amount);
+            processWithOuterSystem(fromAccountNumber, toAccountNumber, amount, loginUser);
         }
     }
 
-    public static void generateRandomException() {
-        int num = random.nextInt(50) + 1;
-//        int num = 1;
-        if (num == 1) {
-            throw new RuntimeException("Error occured!");
-        }
-    }
-
-    private void processWithInnerSystem(String fromAccountNumber, String toAccountNumber, BigDecimal amount) {
+    private void processWithInnerSystem(String fromAccountNumber,
+                                        String toAccountNumber,
+                                        BigDecimal amount,
+                                        LoginUser loginUser) {
         Account fromAccount;
         Account toAccount;
 
@@ -142,6 +164,7 @@ public class AccountService {
             fromAccount = accountRepository.findByAccountNumberForUpdate(fromAccountNumber)
                     .orElseThrow(() -> new BadRequestException("From account not found"));
         }
+        accountValidator.validAccountOwner(fromAccount, loginUser);
 
         if (fromAccount.isLess(amount)) {
             throw new BadRequestException("잔액 부족");
@@ -157,34 +180,30 @@ public class AccountService {
                 toAccount.getAccountNumber(),
                 amount);
         paymentRecordRepository.save(paymentRecord);
-
-        log.debug("transfer {} to {} {}", fromAccountNumber, toAccountNumber, amount);
     }
 
     private void processWithOuterSystem(String fromAccountNumber,
                                         String toAccountNumber,
-                                        BigDecimal amount) {
+                                        BigDecimal amount, LoginUser loginUser) {
         String uuid = UUID.randomUUID().toString();
         try {
-            if (!accountRepository.existsByAccountNumber(fromAccountNumber)) {
-                throw new BadRequestException("From account not found");
-            }
+            Account fromAccount = accountReader.getAccountByAccountNumber(fromAccountNumber);
+            accountValidator.validAccountOwner(fromAccount, loginUser);
 
             paymentClient.requestTransfer(uuid, fromAccountNumber, toAccountNumber, amount);
 
             PaymentRecord paymentRecord = new PaymentRecord(uuid, fromAccountNumber, toAccountNumber, amount.negate());
-            Account fromAccount = accountRepository.findByAccountNumberForUpdate(fromAccountNumber)
+            fromAccount = accountRepository.findByAccountNumberForUpdate(fromAccountNumber)
                     .orElseThrow(() -> new BadRequestException("From account not found"));
             fromAccount.substractBalance(amount);
             paymentRecordRepository.save(paymentRecord);
-            generateRandomException();
+            CommonUtil.generateRandomException();
         } catch (Exception e) {
             paymentProducer.transferRollback(uuid);
             throw new SsapayException("Cannot transfer money to outer system", e);
         }
     }
 
-    //다른 서비스에서 송금 요청
     @Transactional
     public void transferExternal(String uuid,
                                  String fromAccountNumber,
@@ -219,17 +238,19 @@ public class AccountService {
 
     // 계좌 삭제
     @Transactional
-    public void deleteAccount(String accountNumber) {
+    public void deleteAccount(AccountDeleteRequest request, LoginUser loginUser) {
+        String accountNumber = request.accountNumber();
+
         Account account = accountRepository.findByAccountNumberForUpdate(accountNumber)
                 .orElseThrow(() -> new BadRequestException("Account not found"));
-        account.delete();
+        accountValidator.validAccountOwner(account, loginUser);
 
-        log.debug("delete {} to {} {}", accountNumber);
+        account.delete();
     }
 
-    // 유저의 전체 계좌 조회
-    public AllAccountsResponse checkAllAccounts(Long userId) {
-        List<Account> accounts = accountRepository.findAllAccountByUserId(userId);
+    @Transactional(readOnly = true)
+    public AllAccountsResponse checkAllAccounts(LoginUser loginUser) {
+        List<Account> accounts = accountRepository.findAllAccountByUserId(loginUser.id());
         List<AccountResponse> accountInfos = accounts.stream()
                 .map(AccountResponse::from)
                 .toList();
@@ -237,9 +258,16 @@ public class AccountService {
         return new AllAccountsResponse(accountInfos);
     }
 
-    // 계좌 잔액 기간별 확인
-    public RecordsInPeriodResponse checkPaymentRecordByPeriod(String accountNumber, LocalDate startDate,
-                                                              LocalDate endDate) {
+    @Transactional(readOnly = true)
+    public RecordsInPeriodResponse checkPaymentRecordByPeriod(checkPaymentRecordByPeriod request,
+                                                              LoginUser loginUser) {
+        String accountNumber = request.accountNumber();
+        LocalDate startDate = request.startDate();
+        LocalDate endDate = request.endDate();
+
+        Account account = accountReader.getAccountByAccountNumber(request.accountNumber());
+        accountValidator.validAccountOwner(account, loginUser);
+
         LocalDateTime start = startDate.atStartOfDay();
         LocalDateTime end = endDate.atTime(LocalTime.MAX);
         List<PaymentRecord> records = accountRepository.findByAccountNumberAndPeriod(accountNumber, start, end);

@@ -39,3 +39,17 @@ account:
 external:
   transfer:
     url: http://13.124.221.0:8080/api/v1/account/transfer/external
+
+jwt:
+  access-token-cookie-name: access_token
+  refresh-token-cookie-name: refresh_token
+  access-token-duration: 1800000
+  refresh-token-duration: 86400000
+  secret: 1234554321sdfasjfdhasjkerqwioeu42uihrfjskablasdfljkshalfksdf2342rsdvasdfgqeerfswdfasfasdfq3453sdd
+
+oauth:
+  google:
+    client_id: ${oauth.google.client_id}
+    client_secret: ${oauth.google.client-secret}
+    redirect_uri: ${oauth.google.redirect-uri}
+    scope: email, profile
