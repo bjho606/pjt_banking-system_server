@@ -1,16 +1,21 @@
 package com.ssafy.ssapay.domain.user.entity;
 
-import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import java.time.LocalDateTime;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
-@Setter
+@NoArgsConstructor
 public class User {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -23,6 +28,9 @@ public class User {
 
     @Column(nullable = false)
     private String email;
+
+    @Column(nullable = false)
+    private String authority;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -41,5 +49,16 @@ public class User {
         updatedAt = LocalDateTime.now();
     }
 
-    // Getters and Setters
+    @Builder
+    private User(Long id,
+                 String username,
+                 String password,
+                 String email,
+                 String authority) {
+        this.id = id;
+        this.username = username;
+        this.password = password;
+        this.email = email;
+        this.authority = authority;
+    }
 }
