@@ -304,6 +304,69 @@ A시스템의 a1 계좌와 B시스템의 b1 계좌 사이에 송금하는 요청
 
 ![dp replication](./uploads/db_replication.png)
 
+#### 과정
+1. mysql 설치 및 계정 설정
+    ```bash
+    sudo apt-get update
+    sudo apt-get install mysql-server
+    sudo systemctl start mysql
+    sudo systemctl enable mysql
+    
+    sudo mysql_secure_installation
+    sudo mysql -u root
+    ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '새로운_비밀번호';
+    flush privileges;
+    
+    create database 'DB 이름';
+    ```
+2. mysql 설정 (master, slave)
+    ```bash
+    sudo vim /etc/mysql/mysql.conf.d/mysqld.cnf
+
+    ##############소스 서버
+    [mysqld]
+    user            = mysql
+    # pid-file      = /var/run/mysqld/mysqld.pid
+    # socket        = /var/run/mysqld/mysqld.sock
+    # port          = 3306
+    # datadir       = /var/lib/mysql
+    gtid_mode=ON
+    enforce_gtid_consistency=ON
+    server_id=1111
+    log_bin=mysql
+    
+    ##############레플리카 서버
+    [mysqld]
+    user            = mysql
+    # pid-file      = /var/run/mysqld/mysqld.pid
+    # socket        = /var/run/mysqld/mysqld.sock
+    # port          = 3306
+    # datadir       = /var/lib/mysql
+    gtid_mode=ON
+    enforce_gtid_consistency=ON
+    server_id=2222
+    relay_log=relay
+    relay_log_purge=ON
+    read_only
+    log_slave_updates
+   ```
+3. 복제 계정 설정
+   ```bash
+   create user 'repl_user'@'%' identified by '비밀번호';
+   grant replication slave on *.* to 'repl_user'@'%';
+   flush privileges;
+   ````
+4. 데이터 추가
+5. 복제 시작
+   ```bash
+   source /home/.../source_data.sql;
+
+   change replication source to source_host='복제할 host', source_port=3306, source_user='repl_user', source_password='비밀번호', source_auto_position=1, get_source_public_key=1;
+    
+   start replica;
+   show replica status \\G
+   ```
+
 #### 성능 테스트
 
 
