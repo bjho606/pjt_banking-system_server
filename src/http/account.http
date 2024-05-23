@@ -33,12 +33,12 @@ Content-Type: application/json
 }
 
 ### 계좌 송금
-POST http://34.64.125.6:8080/api/v1/account/transfer
+POST http://localhost:8080/api/v1/account/transfer
 Content-Type: application/json
 
 {
-  "fromAccountNumber": "mj82227053",
-  "toAccountNumber": "jh-USER0ACCOUNT0",
+  "fromAccountNumber": "mj-user00",
+  "toAccountNumber": "mj-user01",
   "amount": 500
 }
 

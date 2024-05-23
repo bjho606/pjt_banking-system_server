@@ -17,10 +17,11 @@ public class PaymentClient {
     @Value("${external.transfer.url}")
     private String externalTransferUrl;
 
-    public void requestTransfer(String fromAccountNumber, String toAccountNumber, BigDecimal amount) {
+    public void requestTransfer(String uuid, String fromAccountNumber, String toAccountNumber, BigDecimal amount) {
         log.debug("transfer {} to {} {}", fromAccountNumber, toAccountNumber, amount);
 
         Map<String, Object> body = new HashMap<>();
+        body.put("uuid", uuid);
         body.put("fromAccountNumber", fromAccountNumber);
         body.put("toAccountNumber", toAccountNumber);
         body.put("amount", amount);

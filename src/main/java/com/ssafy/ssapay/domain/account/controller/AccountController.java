@@ -57,7 +57,10 @@ public class AccountController {
 
     @PostMapping("/transfer/external")
     public void transferExternal(@RequestBody TransferRequest request) {
-        accountService.transferExternal(request.fromAccountNumber(), request.toAccountNumber(), request.amount());
+        accountService.transferExternal(request.uuid(),
+                request.fromAccountNumber(),
+                request.toAccountNumber(),
+                request.amount());
     }
 
     @DeleteMapping

@@ -1,21 +1,21 @@
 // GET
 import http from "k6/http";
-import {check, sleep} from "k6";
+import {check} from "k6";
 
 export const options = {
-    // vus: 500, // 가상 사용자 수
+    // vus: 150, // 가상 사용자 수
     // duration: "1m", // 테스트 시간
     stages: [
-        {duration: '10s', target: 50}, // below normal load
-        {duration: '20s', target: 50},
         {duration: '10s', target: 100}, // below normal load
         {duration: '20s', target: 100},
-        {duration: '10s', target: 150}, // target
-        {duration: '20s', target: 150},
-        {duration: '10s', target: 200}, // breaking point
+        {duration: '10s', target: 200}, // below normal load
         {duration: '20s', target: 200},
-        {duration: '10s', target: 250}, // beyond
+        {duration: '10s', target: 250}, // target
         {duration: '20s', target: 250},
+        {duration: '10s', target: 300}, // breaking point
+        {duration: '20s', target: 300},
+        {duration: '10s', target: 400}, // beyond
+        {duration: '20s', target: 400},
         {duration: '30s', target: 0}, // scale down. Recovery stage.
     ],
 
@@ -49,10 +49,10 @@ export default function () {
         transferApi()
     }
 
-    sleep(1)
+    // sleep(1)
 }
 
-const base_url = "http://34.47.68.121:8080";
+const base_url = "http://localhost:8080";
 
 function getRandomValue(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;

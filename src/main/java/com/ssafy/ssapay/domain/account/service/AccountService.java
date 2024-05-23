@@ -11,6 +11,7 @@ import com.ssafy.ssapay.domain.payment.entity.PaymentRecord;
 import com.ssafy.ssapay.domain.user.entity.User;
 import com.ssafy.ssapay.global.error.type.BadRequestException;
 import com.ssafy.ssapay.infra.payment.PaymentClient;
+import com.ssafy.ssapay.infra.payment.PaymentProducer;
 import com.ssafy.ssapay.infra.repository.AccountRepository;
 import com.ssafy.ssapay.infra.repository.PaymentRecordRepository;
 import com.ssafy.ssapay.infra.repository.UserRepository;
@@ -20,6 +21,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Random;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,11 +33,14 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Transactional(readOnly = true)
 public class AccountService {
+    private static Random random = new Random();
+
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
     private final PaymentRecordRepository paymentRecordRepository;
 
     private final PaymentClient paymentClient;
+    private final PaymentProducer paymentProducer;
 
     @Value("${account.number.prefix}")
     private String ACCOUNT_NUMBER_PREFIX;
@@ -113,12 +118,10 @@ public class AccountService {
         }
     }
 
-    private static Random random = new Random();
-
     public static void generateRandomException() {
-        int num = random.nextInt(50) + 1; // 1부터 50까지의 랜덤한 숫자 생성
+        int num = random.nextInt(50) + 1;
         if (num == 1) {
-            throw new RuntimeException("Exception thrown when random number is 1");
+            throw new RuntimeException("Error occured!");
         }
     }
 
@@ -156,31 +159,60 @@ public class AccountService {
         log.debug("transfer {} to {} {}", fromAccountNumber, toAccountNumber, amount);
     }
 
-    private void processWithOuterSystem(String fromAccountNumber, String toAccountNumber, BigDecimal amount) {
-        if (!accountRepository.existsByAccountNumber(fromAccountNumber)) {
-            throw new BadRequestException("From account not found");
+    private void processWithOuterSystem(String fromAccountNumber,
+                                        String toAccountNumber,
+                                        BigDecimal amount) {
+        String uuid = UUID.randomUUID().toString();
+        try {
+            if (!accountRepository.existsByAccountNumber(fromAccountNumber)) {
+                throw new BadRequestException("From account not found");
+            }
+
+            paymentClient.requestTransfer(uuid, fromAccountNumber, toAccountNumber, amount);
+
+            PaymentRecord paymentRecord = new PaymentRecord(uuid, fromAccountNumber, toAccountNumber, amount.negate());
+            Account fromAccount = accountRepository.findByAccountNumberForUpdate(fromAccountNumber)
+                    .orElseThrow(() -> new BadRequestException("From account not found"));
+            fromAccount.substractBalance(amount);
+            paymentRecordRepository.save(paymentRecord);
+            generateRandomException();
+        } catch (Exception e) {
+            log.error("Error occurred during transfer", e);
+            paymentProducer.transferRollback(uuid);
         }
-
-        paymentClient.requestTransfer(fromAccountNumber, toAccountNumber, amount);
-
-        PaymentRecord paymentRecord = new PaymentRecord(fromAccountNumber, toAccountNumber, amount.negate());
-        Account fromAccount = accountRepository.findByAccountNumberForUpdate(fromAccountNumber)
-                .orElseThrow(() -> new BadRequestException("From account not found"));
-        fromAccount.substractBalance(amount);
-        paymentRecordRepository.save(paymentRecord);
-        generateRandomException();
     }
 
     //다른 서비스에서 송금 요청
     @Transactional
-    public void transferExternal(String fromAccountNumber, String toAccountNumber, BigDecimal amount) {
+    public void transferExternal(String uuid,
+                                 String fromAccountNumber,
+                                 String toAccountNumber,
+                                 BigDecimal amount) {
         Account account = accountRepository.findByAccountNumberForUpdate(toAccountNumber)
                 .orElseThrow(() -> new BadRequestException("Account not found"));
 
         account.addBalance(amount);
 
-        PaymentRecord paymentRecord = new PaymentRecord(fromAccountNumber, account.getAccountNumber(), amount);
+        PaymentRecord paymentRecord = new PaymentRecord(uuid,
+                fromAccountNumber,
+                account.getAccountNumber(),
+                amount);
         paymentRecordRepository.save(paymentRecord);
+    }
+
+    @Transactional
+    public void rollbackTransfer(String uuid) {
+        PaymentRecord paymentRecord = paymentRecordRepository.findByUuid(uuid)
+                .orElseThrow(() -> new BadRequestException("Payment record not found"));
+
+        String fromAccountNumber = paymentRecord.getFromAccountNumber();
+        BigDecimal amount = paymentRecord.getAmount();
+
+        Account account = accountRepository.findByAccountNumberForUpdate(fromAccountNumber)
+                .orElseThrow(() -> new BadRequestException("Account not found"));
+        account.substractBalance(amount);
+
+        paymentRecordRepository.delete(paymentRecord);
     }
 
     // 계좌 삭제

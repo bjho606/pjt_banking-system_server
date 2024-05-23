@@ -10,6 +10,7 @@ import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -22,6 +23,9 @@ public class PaymentRecord {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(nullable = false, unique = true)
+    private String uuid;
 
     private String fromAccountNumber;
 
@@ -36,10 +40,11 @@ public class PaymentRecord {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+    public PaymentRecord(String uuid, String fromAccountNumber, String toAccountNumber, BigDecimal amount) {
+        this.uuid = uuid;
+        this.fromAccountNumber = fromAccountNumber;
+        this.toAccountNumber = toAccountNumber;
+        this.amount = amount;
     }
 
     @PreUpdate
@@ -56,5 +61,12 @@ public class PaymentRecord {
         this.fromAccountNumber = fromAccountNumber;
         this.toAccountNumber = toAccountNumber;
         this.amount = amount;
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+        uuid = uuid == null ? UUID.randomUUID().toString() : uuid;
     }
 }
