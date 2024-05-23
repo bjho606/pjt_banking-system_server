@@ -120,7 +120,8 @@ public class AccountService {
     }
 
     public static void generateRandomException() {
-        int num = random.nextInt(50) + 1;
+        int num = random.nextInt(2) + 1;
+//        int num = 1;
         if (num == 1) {
             throw new RuntimeException("Error occured!");
         }
@@ -178,9 +179,8 @@ public class AccountService {
             paymentRecordRepository.save(paymentRecord);
             generateRandomException();
         } catch (Exception e) {
-            log.error("Error occurred during transfer", e);
             paymentProducer.transferRollback(uuid);
-            throw new SsapayException("Cannot transfer money to outer system");
+            throw new SsapayException("Cannot transfer money to outer system", e);
         }
     }
 
