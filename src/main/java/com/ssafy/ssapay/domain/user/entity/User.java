@@ -1,6 +1,7 @@
 package com.ssafy.ssapay.domain.user.entity;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -20,17 +21,23 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
     private String username;
 
-    @Column(nullable = false)
     private String password;
+
+    @Column(nullable = false)
+    private String nickname;
 
     @Column(nullable = false)
     private String email;
 
     @Column(nullable = false)
     private String authority;
+
+    @Embedded
+    private OauthId oauthId;
+
+    private String refreshToken;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -53,12 +60,18 @@ public class User {
     private User(Long id,
                  String username,
                  String password,
+                 String nickname,
                  String email,
-                 String authority) {
+                 String authority,
+                 OauthId oauthId,
+                 String refreshToken) {
         this.id = id;
         this.username = username;
         this.password = password;
+        this.nickname = nickname;
         this.email = email;
         this.authority = authority;
+        this.oauthId = oauthId;
+        this.refreshToken = refreshToken;
     }
 }

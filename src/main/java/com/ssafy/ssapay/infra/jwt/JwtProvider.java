@@ -1,7 +1,7 @@
 package com.ssafy.ssapay.infra.jwt;
 
-import com.ssafy.ssapay.domain.token.dto.AccessToken;
-import com.ssafy.ssapay.domain.token.dto.RefreshToken;
+import com.ssafy.ssapay.domain.auth.dto.token.AccessToken;
+import com.ssafy.ssapay.domain.auth.dto.token.RefreshToken;
 import com.ssafy.ssapay.domain.user.entity.User;
 import com.ssafy.ssapay.global.util.TimeUtil;
 import com.ssafy.ssapay.infra.repository.TokenRepository;

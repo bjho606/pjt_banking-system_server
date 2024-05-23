@@ -69,7 +69,11 @@ public class WebSecurityConfig {
 
         http.authorizeHttpRequests(request ->
                 request
-                        .requestMatchers(HttpMethod.POST, "/api/v1/users", "/api/v1/auth/login")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/users",
+                                "/api/v1/auth/login",
+                                "/api/v1/oauth/login/{OauthServerType}")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/oauth/{OauthServerType}")
                         .permitAll()
                         .anyRequest()
                         .authenticated());
@@ -83,15 +87,6 @@ public class WebSecurityConfig {
                                 accessDeniedHandler(),
                                 new AntPathRequestMatcher("/api/**")));
 
-//        http.oauth2Login()
-//            .loginPage("/login")
-//            .authorizationEndpoint()
-//            .authorizationRequestRepository(oAuth2AuthorizationRequestBasedOnCookieRepository())
-//            .and()
-//            .successHandler(oAuth2SuccessHandler())
-//            .userInfoEndpoint()
-//            .userService(oAuth2UserService);
-
         return http.build();
     }
 
@@ -99,7 +94,7 @@ public class WebSecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.addAllowedOrigin("http://localhost:8080");
+        configuration.addAllowedOriginPattern("*");
         configuration.addAllowedHeader("*");
         configuration.addAllowedMethod("*");
         configuration.setAllowCredentials(true);
@@ -114,20 +109,6 @@ public class WebSecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-//    @Bean
-//    public OAuth2AuthorizationRequestBasedOnCookieRepository oAuth2AuthorizationRequestBasedOnCookieRepository() {
-//        return new OAuth2AuthorizationRequestBasedOnCookieRepository();
-//    }
-//
-//    @Bean
-//    public OAuth2SuccessHandler oAuth2SuccessHandler() {
-//        return new OAuth2SuccessHandler(jwtProvider,
-//            jwtProperties,
-//            tokenRepository,
-//            oAuth2AuthorizationRequestBasedOnCookieRepository(),
-//            memberUtil);
-//    }
-//
 @Bean
 public JwtAuthenticationFilter jwtAuthenticationFilter() {
     return new JwtAuthenticationFilter(jwtProvider, jwtResolver, jwtProperties);

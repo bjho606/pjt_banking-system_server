@@ -1,6 +1,6 @@
 package com.ssafy.ssapay.infra.repository;
 
-import com.ssafy.ssapay.domain.token.dto.Token;
+import com.ssafy.ssapay.domain.auth.dto.token.Token;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

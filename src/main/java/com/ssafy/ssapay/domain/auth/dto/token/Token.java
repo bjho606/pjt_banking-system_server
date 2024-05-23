@@ -1,4 +1,4 @@
-package com.ssafy.ssapay.domain.token.dto;
+package com.ssafy.ssapay.domain.auth.dto.token;
 
 public abstract class Token {
     protected String key;

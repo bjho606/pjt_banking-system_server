@@ -46,3 +46,10 @@ jwt:
   access-token-duration: 1800000
   refresh-token-duration: 86400000
   secret: 1234554321sdfasjfdhasjkerqwioeu42uihrfjskablasdfljkshalfksdf2342rsdvasdfgqeerfswdfasfasdfq3453sdd
+
+oauth:
+  google:
+    client_id: ${oauth.google.client_id}
+    client_secret: ${oauth.google.client-secret}
+    redirect_uri: ${oauth.google.redirect-uri}
+    scope: email, profile

@@ -1,6 +1,7 @@
 package com.ssafy.ssapay.domain.user.implementation;
 
 import com.ssafy.ssapay.domain.auth.dto.request.LoginRequest;
+import com.ssafy.ssapay.domain.user.entity.OauthId;
 import com.ssafy.ssapay.domain.user.entity.User;
 import com.ssafy.ssapay.domain.user.entity.UserSecret;
 import com.ssafy.ssapay.global.error.type.BadRequestException;
@@ -22,6 +23,11 @@ public class UserReader {
 
     public User getUserById(Long id) {
         return userRepository.findById(id)
+                .orElseThrow(() -> new BadRequestException("존재하지 않는 사용자입니다."));
+    }
+
+    public User getUserByOauthId(OauthId oauthId) {
+        return userRepository.findByOauthId(oauthId)
                 .orElseThrow(() -> new BadRequestException("존재하지 않는 사용자입니다."));
     }
 

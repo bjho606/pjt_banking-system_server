@@ -22,6 +22,14 @@ public class AuthService {
     public LoginResponse login(LoginRequest request) {
         User user = userReader.getUserByUsernameAndPassword(request);
 
+        return provideToken(user);
+    }
+
+    public LoginResponse login(User user) {
+        return provideToken(user);
+    }
+
+    private LoginResponse provideToken(User user) {
         String accessToken = tokenManager.createAccessToken(user);
         String refreshToken = tokenManager.createRefreshToken(user);
         return new LoginResponse(refreshToken, accessToken);
