@@ -3,6 +3,7 @@ package com.ssafy.ssapay.global.error;
 import com.ssafy.ssapay.global.error.response.ErrorResponse;
 import com.ssafy.ssapay.global.error.type.BadRequestException;
 import com.ssafy.ssapay.global.error.type.DataNotFoundException;
+import com.ssafy.ssapay.global.error.type.SsapayException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +22,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleBadRequestException(BadRequestException e) {
         log.error("Error: ", e);
         return createErrorResponse(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+
+    @ExceptionHandler(SsapayException.class)
+    public ResponseEntity<ErrorResponse> handleException(SsapayException e) {
+        log.error("Error: ", e);
+        return createErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "해당 은행으로 송금할 수 없습니다.");
     }
 
     @ExceptionHandler(Exception.class)

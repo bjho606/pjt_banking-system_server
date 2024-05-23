@@ -10,6 +10,7 @@ import com.ssafy.ssapay.domain.account.entity.Account;
 import com.ssafy.ssapay.domain.payment.entity.PaymentRecord;
 import com.ssafy.ssapay.domain.user.entity.User;
 import com.ssafy.ssapay.global.error.type.BadRequestException;
+import com.ssafy.ssapay.global.error.type.SsapayException;
 import com.ssafy.ssapay.infra.payment.PaymentClient;
 import com.ssafy.ssapay.infra.payment.PaymentProducer;
 import com.ssafy.ssapay.infra.repository.AccountRepository;
@@ -179,6 +180,7 @@ public class AccountService {
         } catch (Exception e) {
             log.error("Error occurred during transfer", e);
             paymentProducer.transferRollback(uuid);
+            throw new SsapayException("Cannot transfer money to outer system");
         }
     }
 
