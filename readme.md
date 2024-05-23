@@ -228,7 +228,74 @@ A시스템의 a1 계좌와 B시스템의 b1 계좌 사이에 송금하는 요청
 ### 3.분산 서버에서 트랜잭션 처리 2
 
 > 분산 서버(서로 다른 결제 시스템) 사이에서 한 계좌에서 다른 계좌로의 송금 장애나 예외처리로 인해 실패할 경우,<br>
-> 트랜잭션이 rollback 되어야 한다.
+> 트랜잭션이 rollback 되어야 한다. <br>
+> => Saga Pattern 도입 (그 중 Choreography 방식)
+
+![send_between_exception](./uploads/send_between_exception.jpg)
+
+#### Saga Pattern (Choreography 방식)
+- 이벤트 pub/sub (publisher/subscriber) 을 활용하여 통신하는 방법
+- 프로세스를 진행하다가 중간에 실패(장애, 예외처리)하는 경우가 발생하면 `보상 트랜잭션 이벤트`를 발행하여 원상태로 되돌리는 방법
+- 대표적으로 kafka 로 구현할 수 있다.
+  ![kafka](./uploads/kafka_progress.jpg)
+  - 실패 포인트는 어디든 될 수 있다. 결국 실패한 곳에서부터 보상 트랜잭션이 발동하여 이전 변경사항을 되돌린다.
+      ```java
+      private void processWithOuterSystem(String fromAccountNumber,
+                                          String toAccountNumber,
+                                          BigDecimal amount) {
+          String uuid = UUID.randomUUID().toString();
+          // 중간 과정이 모두 성공하면 그대로 진행한다.
+          try {
+              if (!accountRepository.existsByAccountNumber(fromAccountNumber)) {
+                  throw new BadRequestException("From account not found");
+              }
+
+              paymentClient.requestTransfer(uuid, fromAccountNumber, toAccountNumber, amount);
+
+              PaymentRecord paymentRecord = new PaymentRecord(uuid, fromAccountNumber, toAccountNumber, amount.negate());
+              Account fromAccount = accountRepository.findByAccountNumberForUpdate(fromAccountNumber)
+                      .orElseThrow(() -> new BadRequestException("From account not found"));
+              fromAccount.substractBalance(amount);
+              paymentRecordRepository.save(paymentRecord);
+              generateRandomException();
+          }
+          // 중간에 실패하는 경우, 보상 트랜잭션 이벤트를 발행한다. 
+          catch (Exception e) {
+              paymentProducer.transferRollback(uuid);   // 보상 이벤트 발행
+              throw new SsapayException("Cannot transfer money to outer system", e);
+          }
+      }
+      ```
+    - PaymentProducer 에서는 `transfer-rollback` 토픽 이벤트를 생성한다.
+    ```java
+    @Component
+    @RequiredArgsConstructor
+    @Slf4j
+    public class PaymentProducer {
+        private final KafkaTemplate kafkaTemplate;
+    
+        public void transferRollback(String uuid) {
+            log.info("======[Send Transfer Rollback] {}======", uuid);
+            kafkaTemplate.send("transfer-rollback", uuid);
+        }
+    }
+    ```
+    - PaymentRollbackConsumer에서는 `transfer-rollback` 토픽을 구독하며, 보상 트랜잭션을 실행시킨다.
+    - 여기서 보상 트랜잭션이란, 계좌의 잔액을 원상태로 복구시키고, 트랜잭션 시작 이후의 거래 내역을 삭제하는 것이다.
+    ```java
+    @Slf4j
+    @Component
+    @RequiredArgsConstructor
+    public class PaymentRollbackConsumer {
+        private final AccountService accountService;
+    
+        @KafkaListener(topics = "transfer-rollback", groupId = "group-01")
+        public void rollback(String uuid) {
+            log.error("======[Rollback] {}======", uuid);
+            accountService.rollbackTransfer(uuid);
+        }
+    }
+    ```
 
 ### 4. Read/Write DB 분리 (DB Replication)
 
@@ -239,8 +306,8 @@ A시스템의 a1 계좌와 B시스템의 b1 계좌 사이에 송금하는 요청
 
 #### 성능 테스트
 
----
 
+---
 # 프로젝트 소감
 
 ### 변재호
