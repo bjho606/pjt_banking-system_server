@@ -67,7 +67,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private void handleSuccess(String accessToken, String refreshToken, String requestUri) {
         User user = jwtResolver.getUser(accessToken);
-        LoginUser loginUser = new LoginUser(user.getUsername());
+        LoginUser loginUser = new LoginUser(user.getId(), user.getUsername());
         AuthenticatedToken authenticatedToken = new AuthenticatedToken(accessToken, refreshToken);
         UsernamePasswordAuthenticationToken loginToken = new UsernamePasswordAuthenticationToken(loginUser,
                 authenticatedToken, AuthorityUtils.createAuthorityList(user.getAuthority()));

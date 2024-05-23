@@ -5,9 +5,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.ssafy.ssapay.config.TestConfig;
-import com.ssafy.ssapay.domain.account.dto.response.accountNumberResponse;
+import com.ssafy.ssapay.domain.account.dto.request.CheckBalanceRequest;
 import com.ssafy.ssapay.domain.account.dto.response.BalanceResponse;
+import com.ssafy.ssapay.domain.account.dto.response.accountNumberResponse;
 import com.ssafy.ssapay.domain.account.entity.Account;
+import com.ssafy.ssapay.domain.auth.dto.internal.LoginUser;
 import com.ssafy.ssapay.domain.user.entity.User;
 import com.ssafy.ssapay.global.error.type.BadRequestException;
 import com.ssafy.ssapay.util.TestTransactionService;
@@ -51,9 +53,9 @@ class AccountServiceTest {
         // given
         User user = createUser("test", "test", "test@test.com");
         testService.persist(user);
-        Long userId = user.getId();
+        LoginUser loginUser = new LoginUser(user.getId(), user.getUsername());
         // when
-        accountNumberResponse response = accountService.createAccount(userId);
+        accountNumberResponse response = accountService.createAccount(loginUser);
         // then
         String accountNumber = response.accountNumber();
         Account account = em.find(Account.class, accountNumber);
@@ -71,8 +73,10 @@ class AccountServiceTest {
         Account account = new Account(user, "11111111");
         account.addBalance(new BigDecimal(10000));
         testService.persist(user, account);
+        LoginUser loginUser = new LoginUser(user.getId(), user.getUsername());
+        CheckBalanceRequest request = new CheckBalanceRequest(account.getAccountNumber());
         // when
-        BalanceResponse response = accountService.checkBalance(account.getAccountNumber());
+        BalanceResponse response = accountService.checkBalance(request, loginUser);
         // then
         BigDecimal balance = response.balance();
         BigDecimal expected = new BigDecimal(10000);

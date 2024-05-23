@@ -55,7 +55,8 @@ public class JwtProvider implements InitializingBean {
 
         return Jwts.builder()
                 .setHeaderParam(Header.TYPE, Header.JWT_TYPE)
-                .setSubject(user.getUsername())
+                .setSubject(String.valueOf(user.getId()))
+                .claim("username", user.getUsername())
                 .claim(AUTHORITIES_KEY, authorities)
                 .signWith(key, SignatureAlgorithm.HS512)
                 .setExpiration(expiredDate)

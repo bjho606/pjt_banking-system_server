@@ -34,8 +34,12 @@ public class JwtResolver implements InitializingBean {
                 .getBody();
     }
 
-    public String getName(String token) {
+    public String getId(String token) {
         return getClaims(token).getSubject();
+    }
+
+    public String getName(String token) {
+        return getClaims(token).get("username").toString();
     }
 
     public String getAuthorities(String token) {
@@ -51,7 +55,8 @@ public class JwtResolver implements InitializingBean {
         String role = claims.get(AUTHORITIES_KEY).toString();
 
         return User.builder()
-                .username(claims.getSubject())
+                .id(Long.valueOf(claims.getSubject()))
+                .username(claims.get("username").toString())
                 .authority(role)
                 .build();
     }
