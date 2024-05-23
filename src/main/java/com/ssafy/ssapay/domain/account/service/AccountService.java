@@ -207,10 +207,10 @@ public class AccountService {
         PaymentRecord paymentRecord = paymentRecordRepository.findByUuid(uuid)
                 .orElseThrow(() -> new BadRequestException("Payment record not found"));
 
-        String fromAccountNumber = paymentRecord.getFromAccountNumber();
+        String toAccountNumber = paymentRecord.getToAccountNumber();
         BigDecimal amount = paymentRecord.getAmount();
 
-        Account account = accountRepository.findByAccountNumberForUpdate(fromAccountNumber)
+        Account account = accountRepository.findByAccountNumberForUpdate(toAccountNumber)
                 .orElseThrow(() -> new BadRequestException("Account not found"));
         account.substractBalance(amount);
 
