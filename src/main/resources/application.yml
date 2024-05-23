@@ -23,7 +23,7 @@ spring:
   kafka:
     bootstrap-servers: ${kafka.host}:${kafka.port}
     producer:
-      bootstrap-servers: ${kafka.host}:${kafka.port}
+      bootstrap-servers: ${kafka.producer.host}:${kafka.producer.port}
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
     consumer:
