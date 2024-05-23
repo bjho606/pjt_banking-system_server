@@ -1,6 +1,7 @@
 package com.ssafy.ssapay.infra.jwt;
 
 import com.ssafy.ssapay.domain.token.dto.AccessToken;
+import com.ssafy.ssapay.domain.token.dto.RefreshToken;
 import com.ssafy.ssapay.domain.user.entity.User;
 import com.ssafy.ssapay.global.util.TimeUtil;
 import com.ssafy.ssapay.infra.repository.TokenRepository;
@@ -61,24 +62,31 @@ public class JwtProvider implements InitializingBean {
                 .compact();
     }
 
-    public boolean isValidToken(String token) {
+    public int isValidToken(String token) {
         try {
             Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
-            return true;
-        } catch (ExpiredJwtException |
-                 IllegalArgumentException |
+            return 1;
+        } catch (ExpiredJwtException e) {
+            return 0;
+        } catch (IllegalArgumentException |
                  UnsupportedJwtException |
                  MalformedJwtException |
                  SignatureException e) {
             log.error(e.getMessage(), e);
         }
-        return false;
+        return -1;
     }
 
     public boolean isLogoutAccessToken(String token) {
         String name = jwtResolver.getName(token);
         AccessToken accessToken = new AccessToken(name, token);
 
-        return true;
+        return tokenRepository.exists(accessToken);
+    }
+
+    public boolean isLogoutRefreshToken(String token) {
+        RefreshToken refreshToken = new RefreshToken(token);
+
+        return tokenRepository.exists(refreshToken);
     }
 }

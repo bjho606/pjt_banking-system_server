@@ -1,5 +1,7 @@
 package com.ssafy.ssapay.global.security;
 
+import com.ssafy.ssapay.domain.auth.dto.internal.AuthenticatedToken;
+import com.ssafy.ssapay.domain.auth.dto.internal.LoginUser;
 import com.ssafy.ssapay.domain.user.entity.User;
 import com.ssafy.ssapay.global.util.CookieUtil;
 import com.ssafy.ssapay.infra.jwt.JwtProperties;
@@ -14,6 +16,9 @@ import java.time.LocalDateTime;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -24,42 +29,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtResolver jwtResolver;
     private final JwtProperties jwtProperties;
 
-    private static void handleUnsuccess(String requestUri, HttpServletResponse response) {
-        log.debug("No valid token: {}", requestUri);
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-    }
-
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
-        if (isLoginOrSignupRequest(request)) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
         String accessToken = resolveAccessToken(request);
         String refreshToken = resolveRefreshToken(request);
         String requestUri = request.getRequestURI();
 
-        log.debug(requestUri);
-        log.debug(accessToken);
-        log.debug(refreshToken);
-        if (verify(accessToken)) {
-            handleSuccess(accessToken, requestUri);
-        } else if (verify(refreshToken)) {
-            createNewAccessTokenAndHandleSuccess(response, refreshToken);
-        } else {
-            handleUnsuccess(requestUri, response);
-            return;
+        int result = verifyAccessToken(accessToken);
+        if (result == 1) {
+            handleSuccess(accessToken, refreshToken, requestUri);
+        } else if (result == 0 && verifyRefreshToken(refreshToken)) {
+            String newAccessToken = provideNewAccessToken(refreshToken);
+            handleSuccess(newAccessToken, refreshToken, requestUri);
         }
 
         filterChain.doFilter(request, response);
-    }
-
-    private boolean isLoginOrSignupRequest(HttpServletRequest request) {
-        String requestURI = request.getRequestURI();
-        return requestURI.equals("/api/v1/auth/login");
     }
 
     private String resolveAccessToken(HttpServletRequest request) {
@@ -72,23 +58,32 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 .orElse(null);
     }
 
-    private boolean verify(String token) {
-        return StringUtils.hasText(token)
-                && jwtProvider.isValidToken(token);
+    private int verifyAccessToken(String accessToken) {
+        if (!StringUtils.hasText(accessToken) || jwtProvider.isLogoutAccessToken(accessToken)) {
+            return -1;
+        }
+        return jwtProvider.isValidToken(accessToken);
     }
 
-    private void handleSuccess(String token, String requestUri) {
-        User user = jwtResolver.getUser(token);
+    private void handleSuccess(String accessToken, String refreshToken, String requestUri) {
+        User user = jwtResolver.getUser(accessToken);
+        LoginUser loginUser = new LoginUser(user.getUsername());
+        AuthenticatedToken authenticatedToken = new AuthenticatedToken(accessToken, refreshToken);
+        UsernamePasswordAuthenticationToken loginToken = new UsernamePasswordAuthenticationToken(loginUser,
+                authenticatedToken, AuthorityUtils.createAuthorityList(user.getAuthority()));
+
+        SecurityContextHolder.getContext().setAuthentication(loginToken);
         log.debug("{} stored in context: {}", user.getUsername(), requestUri);
     }
 
-    private void createNewAccessTokenAndHandleSuccess(
-            HttpServletResponse response, String refreshToken) {
+    private boolean verifyRefreshToken(String refreshToken) {
+        return StringUtils.hasText(refreshToken) && !jwtProvider.isLogoutRefreshToken(refreshToken) && (
+                jwtProvider.isValidToken(refreshToken) == 1);
+    }
+
+    private String provideNewAccessToken(String refreshToken) {
         User user = jwtResolver.getUser(refreshToken);
         LocalDateTime expiredTime = jwtProvider.calAccessTokenExpirationTime(LocalDateTime.now());
-        String accessToken = jwtProvider.createToken(user, expiredTime);
-
-        CookieUtil.addCookie(response, jwtProperties.getAccessTokenCookieName(), accessToken,
-                jwtProperties.getAccessTokenDuration().getSeconds());
+        return jwtProvider.createToken(user, expiredTime);
     }
 }

@@ -1,5 +1,8 @@
 package com.ssafy.ssapay.global.security;
 
+import com.ssafy.ssapay.infra.jwt.JwtProperties;
+import com.ssafy.ssapay.infra.jwt.JwtProvider;
+import com.ssafy.ssapay.infra.jwt.JwtResolver;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +23,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -31,12 +35,9 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableWebSecurity
 @Slf4j
 public class WebSecurityConfig {
-//    private final JwtProvider jwtProvider;
-//    private final JwtResolver jwtResolver;
-//    private final OAuth2UserService oAuth2UserService;
-//    private final JwtProperties jwtProperties;
-//    private final TokenRepository tokenRepository;
-//    private final MemberRepositoryHandler memberUtil;
+    private final JwtProvider jwtProvider;
+    private final JwtResolver jwtResolver;
+    private final JwtProperties jwtProperties;
 
     @Bean
     public AccessDeniedHandler accessDeniedHandler() {
@@ -63,13 +64,15 @@ public class WebSecurityConfig {
         http.cors(cors -> cors
                 .configurationSource(corsConfigurationSource()));
 
-//        http.addFilterBefore(
-//            jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(
+                jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
         http.authorizeHttpRequests(request ->
                 request
-                        .requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll()
-                        .anyRequest().permitAll());
+                        .requestMatchers(HttpMethod.POST, "/api/v1/users", "/api/v1/auth/login")
+                        .permitAll()
+                        .anyRequest()
+                        .authenticated());
 
         http.exceptionHandling(exceptionHandling ->
                 exceptionHandling
@@ -125,10 +128,10 @@ public class WebSecurityConfig {
 //            memberUtil);
 //    }
 //
-//    @Bean
-//    public JwtAuthenticationFilter jwtAuthenticationFilter() {
-//        return new JwtAuthenticationFilter(jwtProvider, jwtResolver, jwtProperties);
-//    }
+@Bean
+public JwtAuthenticationFilter jwtAuthenticationFilter() {
+    return new JwtAuthenticationFilter(jwtProvider, jwtResolver, jwtProperties);
+}
 
     @Bean
     AuthenticationManager getAuthenticationManager(AuthenticationConfiguration authenticationConfiguration)

@@ -1,11 +1,13 @@
 package com.ssafy.ssapay.domain.user.service;
 
+import com.ssafy.ssapay.domain.auth.dto.internal.LoginUser;
 import com.ssafy.ssapay.domain.user.dto.internal.UserCreateDto;
 import com.ssafy.ssapay.domain.user.dto.request.UserCreateRequest;
 import com.ssafy.ssapay.domain.user.dto.response.UserResponse;
 import com.ssafy.ssapay.domain.user.implementation.UserReader;
 import com.ssafy.ssapay.domain.user.implementation.UserValidator;
 import com.ssafy.ssapay.domain.user.implementation.UserWriter;
+import com.ssafy.ssapay.global.util.AuthenticationUtil;
 import com.ssafy.ssapay.global.util.MyCrypt;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,7 +36,8 @@ public class UserService {
         userWriter.appendNewUser(userCreateDto);
     }
 
-    public UserResponse getUserProfile(Long id) {
-        return UserResponse.from(userReader.getUserById(id));
+    public UserResponse getUserProfile() {
+        LoginUser loginUser = AuthenticationUtil.getLoginUser();
+        return UserResponse.from(userReader.getUserByUsername(loginUser.username()));
     }
 }
