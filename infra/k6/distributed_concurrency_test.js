@@ -3,7 +3,7 @@ import http from "k6/http";
 import {check, sleep} from "k6";
 
 export const options = {
-    vus: 5, // 가상 사용자 수
+    vus: 10, // 가상 사용자 수
     duration: "10s", // 테스트 시간
 
     thresholds: {
@@ -28,8 +28,8 @@ const base_url1 = "http://34.47.68.121:8080";
 const base_url2 = "http://13.124.221.0:8080";
 
 function transferApi1() {
-    const fromAccount = "mj00";
-    const toAccount = "jh-USER0ACCOUNT0"
+    const fromAccount = "mj-user00";
+    const toAccount = "jh-user00"
     const url = base_url1 + '/api/v1/account/transfer';
     const payload = JSON.stringify({
         fromAccountNumber: fromAccount,
@@ -54,8 +54,8 @@ function transferApi1() {
 }
 
 function transferApi2() {
-    const fromAccount = "jh-USER0ACCOUNT0";
-    const toAccount = "mj00"
+    const fromAccount = "jh-user00";
+    const toAccount = "mj-user00"
     const url = base_url2 + '/api/v1/account/transfer';
     const payload = JSON.stringify({
         fromAccountNumber: fromAccount,
