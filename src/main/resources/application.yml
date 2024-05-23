@@ -20,15 +20,17 @@ spring:
         show_sql: true
         globally_quoted_identifiers: true   # [db 예약어]와 [필드 이름]이 같은 경우 에러나지 않게 처리
 
-image:
-  upload-locations: ${image.upload-locations}
-
-jwt:
-  access-token-cookie-name: access_token
-  refresh-token-cookie-name: refresh_token
-  access-token-duration: 1800000
-  refresh-token-duration: 86400000
-  secret: 1234554321sdfasjfdhasjkerqwioeu42uihrfjskablasdfljkshalfksdf2342rsdvasdfgqeerfswdfasfasdfq3453sdd
+  kafka:
+    bootstrap-servers: ${kafka.host}:${kafka.port}
+    producer:
+      bootstrap-servers: ${kafka.producer.host}:${kafka.producer.port}
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+    consumer:
+      bootstrap-servers: ${kafka.host}:${kafka.port}
+      group-id: group-01
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
 
 account:
   number:
@@ -37,4 +39,3 @@ account:
 external:
   transfer:
     url: http://13.124.221.0:8080/api/v1/account/transfer/external
-
